@@ -7,7 +7,7 @@
 
     <input>
         <net-file value="osm.net.xml.gz"/>
-        <route-files value="osm.passenger.trips.xml"/>
+        <route-files value="heavy.rou.xml"/>
         <additional-files value="rilevazioni/output.add.xml"/>
     </input>
 

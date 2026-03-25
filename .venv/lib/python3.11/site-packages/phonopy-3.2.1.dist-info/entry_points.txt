@@ -1,0 +1,16 @@
+[console_scripts]
+phonopy = phonopy.scripts.phonopy:run
+phonopy-load = phonopy.scripts.phonopy_load:run
+phonopy-bandplot = phonopy.scripts.phonopy_bandplot:run
+phonopy-calc-convert = phonopy.scripts.phonopy_calc_convert:run
+phonopy-crystal-born = phonopy.scripts.phonopy_crystal_born:run
+phonopy-gruneisen = phonopy.scripts.phonopy_gruneisen:run
+phonopy-gruneisenplot = phonopy.scripts.phonopy_gruneisenplot:run
+phonopy-pdosplot = phonopy.scripts.phonopy_pdosplot:run
+phonopy-propplot = phonopy.scripts.phonopy_propplot:run
+phonopy-qha = phonopy.scripts.phonopy_qha:run
+phonopy-tdplot = phonopy.scripts.phonopy_tdplot:run
+phonopy-vasp-born = phonopy.scripts.phonopy_vasp_born:run
+phonopy-vasp-efe = phonopy.scripts.phonopy_vasp_efe:run
+phonopy-qe-born = phonopy.scripts.phonopy_qe_born:run
+
