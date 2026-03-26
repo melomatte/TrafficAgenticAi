@@ -109,3 +109,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    #PER RUNNARE
+    #AVVIARE XQUARTZ
+    #python3 Simulazione\ Sumo/scriptElaborazione/main_multi_agent.py
