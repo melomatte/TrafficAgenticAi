@@ -1,0 +1,34 @@
+<routes>
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" maxSpeed="13.9"/>
+
+    <route id="N_S" edges="n2c c2s"/>
+    <route id="S_N" edges="s2c c2n"/>
+    <route id="E_W" edges="e2c c2w"/>
+    <route id="W_E" edges="w2c c2e"/>
+
+    <route id="N_E" edges="n2c c2e"/>
+    <route id="N_W" edges="n2c c2w"/>
+    <route id="S_E" edges="s2c c2e"/>
+    <route id="S_W" edges="s2c c2w"/>
+    <route id="E_N" edges="e2c c2n"/>
+    <route id="E_S" edges="e2c c2s"/>
+    <route id="W_N" edges="w2c c2n"/>
+    <route id="W_S" edges="w2c c2s"/>
+
+    <!-- traffico principale -->
+    <flow id="f1" type="car" route="N_S" begin="0" end="3600" vehsPerHour="250"/>
+    <flow id="f2" type="car" route="S_N" begin="0" end="3600" vehsPerHour="250"/>
+    <flow id="f3" type="car" route="E_W" begin="0" end="3600" vehsPerHour="220"/>
+    <flow id="f4" type="car" route="W_E" begin="0" end="3600" vehsPerHour="220"/>
+
+    <!-- svolte -->
+    <flow id="f5" type="car" route="N_E" begin="0" end="3600" vehsPerHour="60"/>
+    <flow id="f6" type="car" route="N_W" begin="0" end="3600" vehsPerHour="60"/>
+    <flow id="f7" type="car" route="S_E" begin="0" end="3600" vehsPerHour="60"/>
+    <flow id="f8" type="car" route="S_W" begin="0" end="3600" vehsPerHour="60"/>
+
+    <flow id="f9"  type="car" route="E_N" begin="0" end="3600" vehsPerHour="180"/>
+    <flow id="f10" type="car" route="E_S" begin="0" end="3600" vehsPerHour="180"/>
+    <flow id="f11" type="car" route="W_N" begin="0" end="3600" vehsPerHour="180"/>
+    <flow id="f12" type="car" route="W_S" begin="0" end="3600" vehsPerHour="180"/>
+</routes>

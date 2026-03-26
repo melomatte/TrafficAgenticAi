@@ -1,5 +1,5 @@
 class TrafficAgent:
-    def __init__(self, tls_id, neighbors=None, min_green_steps=15, max_green_steps=40, queue_threshold=3):
+    def __init__(self, tls_id, neighbors=None, min_green_steps=15, max_green_steps=40, queue_threshold=10):
         self.tls_id = tls_id
         self.neighbors = neighbors or []
         self.min_green_steps = min_green_steps
@@ -36,13 +36,17 @@ class TrafficAgent:
         neighbor_queue = sum(msg["queue"] for msg in neighbor_messages)
         time_in_phase = state["steps_in_current_phase"]
 
+        # Rosso fisso finché non ci sono almeno 10 auto in coda
+        if my_queue < self.queue_threshold:
+            return "FORCE_RED"
+
         if time_in_phase < self.min_green_steps:
             return "HOLD"
 
         if time_in_phase >= self.max_green_steps:
             return "NEXT_PHASE"
 
-        if my_queue <= self.queue_threshold and neighbor_queue > my_queue:
+        if neighbor_queue > my_queue:
             return "NEXT_PHASE"
 
         return "HOLD"

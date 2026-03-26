@@ -32,10 +32,25 @@ class SumoAdapter:
         return traci.trafficlight.getPhase(tls_id)
 
     def get_num_phases(self, tls_id):
-        return len(traci.trafficlight.getAllProgramLogics(tls_id)[0].phases)
+        current_program = traci.trafficlight.getProgram(tls_id)
+        logics = traci.trafficlight.getAllProgramLogics(tls_id)
+
+        for logic in logics:
+            if logic.programID == current_program:
+                return len(logic.phases)
+
+        return 1
 
     def set_phase(self, tls_id, phase):
-        traci.trafficlight.setPhase(tls_id, phase)
+        num_phases = self.get_num_phases(tls_id)
+        if 0 <= phase < num_phases:
+            traci.trafficlight.setPhase(tls_id, phase)
+
+    def set_state(self, tls_id, state):
+        traci.trafficlight.setRedYellowGreenState(tls_id, state)
+
+    def get_tls_state_string(self, tls_id):
+        return traci.trafficlight.getRedYellowGreenState(tls_id)
 
     def get_state(self, tls_id):
         lanes = self.get_controlled_lanes(tls_id)
