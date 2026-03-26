@@ -3,7 +3,7 @@ import os
 from sumo_adapter import SumoAdapter
 from traffic_agent import TrafficAgent
 
-SUMO_BINARY = "/Users/raffaele/sumo/bin/sumo"
+SUMO_BINARY = "/Users/raffaele/sumo/bin/sumo-gui"
 CONFIG_PATH = "/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/osm.sumocfg"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -112,4 +112,5 @@ if __name__ == "__main__":
 
     #PER RUNNARE
     #AVVIARE XQUARTZ
+    #CAMBIARE ALL'INIZIO SUMO_BINARY PER SUMO O SUMO-GUI
     #python3 Simulazione\ Sumo/scriptElaborazione/main_multi_agent.py
