@@ -1,6 +1,0 @@
-#!/Users/raffaele/PycharmProjects/TrafficAgenticAi/sumo_clean/bin/python3
-import sys
-from sumo import netedit
-if __name__ == '__main__':
-    sys.argv[0] = sys.argv[0].removesuffix('.exe')
-    sys.exit(netedit())
