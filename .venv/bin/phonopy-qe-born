@@ -1,6 +1,0 @@
-#!/Users/raffaele/PycharmProjects/TrafficAgenticAi/.venv/bin/python3.11
-import sys
-from phonopy.scripts.phonopy_qe_born import run
-if __name__ == '__main__':
-    sys.argv[0] = sys.argv[0].removesuffix('.exe')
-    sys.exit(run())
