@@ -1,20 +1,13 @@
+'''
+python3 agenticArchitecture/main_multi_agent.py --config /home/matteo/Documents/Scalable/TrafficAgenticAi/urbanNetworks/cross/sim.sumocfg --sumo-binary /usr/share/sumo/bin/sumo-gui
+'''
+
+import argparse
 import json
 import os
 from sumo_adapter import SumoAdapter
 
-# per evitare problemi XQuartz usa sumo, non sumo-gui
-SUMO_BINARY = "/usr/share/sumo/bin/sumo-gui"
-
-MAPS = {
-    "viale_aldini": "/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/osm.sumocfg",
-    "cross": "/home/matteo/Documents/Scalable/TrafficAgenticAi/urbanNetworks/cross/sim.sumocfg",
-}
-
-MAP_NAME = "cross"
-CONFIG_PATH = MAPS[MAP_NAME]
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE = os.path.join(BASE_DIR, f"../results/agent_results_{MAP_NAME}.json")
 
 TOTAL_STEPS = 2000
 QUEUE_THRESHOLD = 10
@@ -29,16 +22,28 @@ CURRENT_OPEN = "NS"
 def main():
     global CURRENT_OPEN
 
-    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    parser = argparse.ArgumentParser(description="Traffic multi-agent simulation")
+    parser.add_argument("--config", "-c", required=True, help="Percorso al file .sumocfg della simulazione")
+    parser.add_argument("--sumo-binary", "-s", required=True, help="Percorso al binario SUMO (sumo-gui)")
+    args = parser.parse_args()
 
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
+    config_path = args.config
+    sumo_binary = args.sumo_binary
+
+    # Ricava il nome della mappa dal percorso per il log
+    map_name = os.path.splitext(os.path.basename(config_path))[0]
+    log_file = os.path.join(BASE_DIR, f"../results/agent_results_{map_name}.json")
+
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
+    with open(log_file, "w", encoding="utf-8") as f:
         json.dump([], f, indent=2)
 
-    env = SumoAdapter(SUMO_BINARY, CONFIG_PATH)
+    env = SumoAdapter(sumo_binary, config_path)
     env.start(use_gui=False)
 
     tls_ids = env.get_tls_ids()
-    print("Mappa selezionata:", MAP_NAME)
+    print("Config:", config_path)
     print("Semafori trovati:", tls_ids)
 
     if not tls_ids:
@@ -95,7 +100,7 @@ def main():
                 f"ns_queue={ns_queue} | ew_queue={ew_queue}"
             )
 
-            with open(LOG_FILE, "w", encoding="utf-8") as f:
+            with open(log_file, "w", encoding="utf-8") as f:
                 json.dump(all_logs, f, indent=2)
 
             env.step()
@@ -105,11 +110,8 @@ def main():
     finally:
         env.close()
         print("TraCI chiuso.")
-        print(f"Log salvato in: {LOG_FILE}")
+        print(f"Log salvato in: {log_file}")
 
 
 if __name__ == "__main__":
     main()
-
-    # Apire Quartz
-    # python3 Simulazione\ Sumo/scriptElaborazione/main_multi_agent.py
