@@ -3,11 +3,11 @@ import os
 from sumo_adapter import SumoAdapter
 
 # per evitare problemi XQuartz usa sumo, non sumo-gui
-SUMO_BINARY = "/Users/raffaele/sumo/bin/sumo-gui"
+SUMO_BINARY = "/usr/share/sumo/bin/sumo-gui"
 
 MAPS = {
     "viale_aldini": "/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/osm.sumocfg",
-    "cross": "/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/cross/sim.sumocfg",
+    "cross": "/home/matteo/Documents/Scalable/TrafficAgenticAi/urbanNetworks/cross/sim.sumocfg",
 }
 
 MAP_NAME = "cross"

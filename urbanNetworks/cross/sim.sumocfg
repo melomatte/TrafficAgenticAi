@@ -1,6 +1,6 @@
 <configuration>
     <input>
-        <net-file value="incrocio.net.xml"/>
+        <net-file value="cross.net.xml"/>
         <route-files value="routes.rou.xml"/>
     </input>
 
