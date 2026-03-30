@@ -1,0 +1,13 @@
+<nodes>
+    <!-- Incrocio 1 (sinistra) -->
+    <node id="n1"      x="-200" y="200"/>
+    <node id="s1"      x="-200" y="-200"/>
+    <node id="w1"      x="-400" y="0"/>
+    <node id="center1" x="-200" y="0" type="traffic_light" tlType="static"/>
+
+    <!-- Incrocio 2 (destra) -->
+    <node id="n2"      x="200"  y="200"/>
+    <node id="s2"      x="200"  y="-200"/>
+    <node id="e2"      x="400"  y="0"/>
+    <node id="center2" x="200"  y="0" type="traffic_light" tlType="static"/>
+</nodes>
