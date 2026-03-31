@@ -5,6 +5,7 @@
 .venv/
 sumo_clean/
 
+results/
 
 # Python cache
 __pycache__/
