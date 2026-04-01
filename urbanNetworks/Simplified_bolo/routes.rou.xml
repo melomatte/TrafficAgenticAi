@@ -4,7 +4,7 @@
 <duarouterConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <input>
-        <net-file value="centro_main.net.xml"/>
+        <net-file value="centro_final.net.xml"/>
         <route-files value="trips.trips.xml"/>
     </input>
 
