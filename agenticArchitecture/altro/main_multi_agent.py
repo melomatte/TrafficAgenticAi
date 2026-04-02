@@ -4,7 +4,7 @@ python3 agenticArchitecture/main_multi_agent.py --config /home/matteo/Documents/
 import argparse
 import json
 import os
-from sumo_adapter import SumoAdapter
+from agenticArchitecture.simulation.sumo_adapter import SumoAdapter
 
 # Cartella base dello script, usata per costruire il path del file di log
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

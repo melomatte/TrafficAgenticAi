@@ -6,68 +6,84 @@
       "type": "traffic_light",
       "connections": [
         {
-          "from": "n1_c1",
-          "to": "c1_w1"
+          "from_edge": "n1_c1",
+          "to_edge": "c1_w1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "n1_c1",
-          "to": "c1_s1"
+          "from_edge": "n1_c1",
+          "to_edge": "c1_s1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "n1_c1",
-          "to": "c1_c2"
+          "from_edge": "n1_c1",
+          "to_edge": "c1_c2",
+          "leads_to_intersection": "center2"
         },
         {
-          "from": "n1_c1",
-          "to": "c1_n1"
+          "from_edge": "n1_c1",
+          "to_edge": "c1_n1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c2_c1",
-          "to": "c1_n1"
+          "from_edge": "c2_c1",
+          "to_edge": "c1_n1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c2_c1",
-          "to": "c1_w1"
+          "from_edge": "c2_c1",
+          "to_edge": "c1_w1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c2_c1",
-          "to": "c1_s1"
+          "from_edge": "c2_c1",
+          "to_edge": "c1_s1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c2_c1",
-          "to": "c1_c2"
+          "from_edge": "c2_c1",
+          "to_edge": "c1_c2",
+          "leads_to_intersection": "center2"
         },
         {
-          "from": "s1_c1",
-          "to": "c1_c2"
+          "from_edge": "s1_c1",
+          "to_edge": "c1_c2",
+          "leads_to_intersection": "center2"
         },
         {
-          "from": "s1_c1",
-          "to": "c1_n1"
+          "from_edge": "s1_c1",
+          "to_edge": "c1_n1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "s1_c1",
-          "to": "c1_w1"
+          "from_edge": "s1_c1",
+          "to_edge": "c1_w1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "s1_c1",
-          "to": "c1_s1"
+          "from_edge": "s1_c1",
+          "to_edge": "c1_s1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "w1_c1",
-          "to": "c1_s1"
+          "from_edge": "w1_c1",
+          "to_edge": "c1_s1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "w1_c1",
-          "to": "c1_c2"
+          "from_edge": "w1_c1",
+          "to_edge": "c1_c2",
+          "leads_to_intersection": "center2"
         },
         {
-          "from": "w1_c1",
-          "to": "c1_n1"
+          "from_edge": "w1_c1",
+          "to_edge": "c1_n1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "w1_c1",
-          "to": "c1_w1"
+          "from_edge": "w1_c1",
+          "to_edge": "c1_w1",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         }
       ]
     },
@@ -76,87 +92,103 @@
       "type": "traffic_light",
       "connections": [
         {
-          "from": "n2_c2",
-          "to": "c2_c1"
+          "from_edge": "n2_c2",
+          "to_edge": "c2_c1",
+          "leads_to_intersection": "center1"
         },
         {
-          "from": "n2_c2",
-          "to": "c2_s2"
+          "from_edge": "n2_c2",
+          "to_edge": "c2_s2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "n2_c2",
-          "to": "c2_e2"
+          "from_edge": "n2_c2",
+          "to_edge": "c2_e2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "n2_c2",
-          "to": "c2_n2"
+          "from_edge": "n2_c2",
+          "to_edge": "c2_n2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "e2_c2",
-          "to": "c2_n2"
+          "from_edge": "e2_c2",
+          "to_edge": "c2_n2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "e2_c2",
-          "to": "c2_c1"
+          "from_edge": "e2_c2",
+          "to_edge": "c2_c1",
+          "leads_to_intersection": "center1"
         },
         {
-          "from": "e2_c2",
-          "to": "c2_s2"
+          "from_edge": "e2_c2",
+          "to_edge": "c2_s2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "e2_c2",
-          "to": "c2_e2"
+          "from_edge": "e2_c2",
+          "to_edge": "c2_e2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "s2_c2",
-          "to": "c2_e2"
+          "from_edge": "s2_c2",
+          "to_edge": "c2_e2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "s2_c2",
-          "to": "c2_n2"
+          "from_edge": "s2_c2",
+          "to_edge": "c2_n2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "s2_c2",
-          "to": "c2_c1"
+          "from_edge": "s2_c2",
+          "to_edge": "c2_c1",
+          "leads_to_intersection": "center1"
         },
         {
-          "from": "s2_c2",
-          "to": "c2_s2"
+          "from_edge": "s2_c2",
+          "to_edge": "c2_s2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c1_c2",
-          "to": "c2_s2"
+          "from_edge": "c1_c2",
+          "to_edge": "c2_s2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c1_c2",
-          "to": "c2_e2"
+          "from_edge": "c1_c2",
+          "to_edge": "c2_e2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c1_c2",
-          "to": "c2_n2"
+          "from_edge": "c1_c2",
+          "to_edge": "c2_n2",
+          "leads_to_intersection": "Esterno_Rete_o_Uscita"
         },
         {
-          "from": "c1_c2",
-          "to": "c2_c1"
+          "from_edge": "c1_c2",
+          "to_edge": "c2_c1",
+          "leads_to_intersection": "center1"
         }
       ]
     }
   ],
   "internal_edges": [
-    "c2_s2",
     "c2_e2",
-    "e2_c2",
-    "c2_c1",
-    "c1_n1",
-    "s2_c2",
-    "c1_s1",
-    "c1_w1",
-    "w1_c1",
-    "s1_c1",
-    "c1_c2",
-    "c2_n2",
     "n1_c1",
-    "n2_c2"
+    "c1_s1",
+    "n2_c2",
+    "s1_c1",
+    "s2_c2",
+    "c2_s2",
+    "e2_c2",
+    "w1_c1",
+    "c1_w1",
+    "c2_n2",
+    "c1_n1",
+    "c1_c2",
+    "c2_c1"
   ],
   "entry_points": [],
   "exit_points": []

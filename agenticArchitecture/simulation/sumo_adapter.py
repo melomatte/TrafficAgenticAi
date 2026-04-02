@@ -1,6 +1,5 @@
 import traci
 
-
 class SumoAdapter:
     def __init__(self, sumo_binary, config_path):
         self.sumo_binary = sumo_binary
