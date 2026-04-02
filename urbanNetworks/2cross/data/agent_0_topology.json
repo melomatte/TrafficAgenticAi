@@ -1,0 +1,163 @@
+{
+  "agent_id": "agent_0",
+  "intersections": [
+    {
+      "id": "center1",
+      "type": "traffic_light",
+      "connections": [
+        {
+          "from": "n1_c1",
+          "to": "c1_w1"
+        },
+        {
+          "from": "n1_c1",
+          "to": "c1_s1"
+        },
+        {
+          "from": "n1_c1",
+          "to": "c1_c2"
+        },
+        {
+          "from": "n1_c1",
+          "to": "c1_n1"
+        },
+        {
+          "from": "c2_c1",
+          "to": "c1_n1"
+        },
+        {
+          "from": "c2_c1",
+          "to": "c1_w1"
+        },
+        {
+          "from": "c2_c1",
+          "to": "c1_s1"
+        },
+        {
+          "from": "c2_c1",
+          "to": "c1_c2"
+        },
+        {
+          "from": "s1_c1",
+          "to": "c1_c2"
+        },
+        {
+          "from": "s1_c1",
+          "to": "c1_n1"
+        },
+        {
+          "from": "s1_c1",
+          "to": "c1_w1"
+        },
+        {
+          "from": "s1_c1",
+          "to": "c1_s1"
+        },
+        {
+          "from": "w1_c1",
+          "to": "c1_s1"
+        },
+        {
+          "from": "w1_c1",
+          "to": "c1_c2"
+        },
+        {
+          "from": "w1_c1",
+          "to": "c1_n1"
+        },
+        {
+          "from": "w1_c1",
+          "to": "c1_w1"
+        }
+      ]
+    },
+    {
+      "id": "center2",
+      "type": "traffic_light",
+      "connections": [
+        {
+          "from": "n2_c2",
+          "to": "c2_c1"
+        },
+        {
+          "from": "n2_c2",
+          "to": "c2_s2"
+        },
+        {
+          "from": "n2_c2",
+          "to": "c2_e2"
+        },
+        {
+          "from": "n2_c2",
+          "to": "c2_n2"
+        },
+        {
+          "from": "e2_c2",
+          "to": "c2_n2"
+        },
+        {
+          "from": "e2_c2",
+          "to": "c2_c1"
+        },
+        {
+          "from": "e2_c2",
+          "to": "c2_s2"
+        },
+        {
+          "from": "e2_c2",
+          "to": "c2_e2"
+        },
+        {
+          "from": "s2_c2",
+          "to": "c2_e2"
+        },
+        {
+          "from": "s2_c2",
+          "to": "c2_n2"
+        },
+        {
+          "from": "s2_c2",
+          "to": "c2_c1"
+        },
+        {
+          "from": "s2_c2",
+          "to": "c2_s2"
+        },
+        {
+          "from": "c1_c2",
+          "to": "c2_s2"
+        },
+        {
+          "from": "c1_c2",
+          "to": "c2_e2"
+        },
+        {
+          "from": "c1_c2",
+          "to": "c2_n2"
+        },
+        {
+          "from": "c1_c2",
+          "to": "c2_c1"
+        }
+      ]
+    }
+  ],
+  "internal_edges": [
+    "c2_s2",
+    "c2_e2",
+    "e2_c2",
+    "c2_c1",
+    "c1_n1",
+    "s2_c2",
+    "c1_s1",
+    "c1_w1",
+    "w1_c1",
+    "s1_c1",
+    "c1_c2",
+    "c2_n2",
+    "n1_c1",
+    "n2_c2"
+  ],
+  "entry_points": [],
+  "exit_points": []
+}

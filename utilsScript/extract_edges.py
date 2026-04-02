@@ -1,10 +1,10 @@
 import json, os, traci
 
-BASE = "urbanNetworks/Simplified_bolo_center"
+BASE = "urbanNetworks/2cross"
 OUT_DIR = os.path.join(BASE, "data")
 os.makedirs(OUT_DIR, exist_ok=True)
 
-SUMO = "/Users/raffaele/sumo/bin/sumo"
+SUMO = "/usr/share/sumo/bin/sumo"
 CFG = os.path.join(BASE, "sim.sumocfg")
 OUT = os.path.join(OUT_DIR, "edges.json")
 

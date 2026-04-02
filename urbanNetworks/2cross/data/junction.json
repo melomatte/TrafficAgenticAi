@@ -1,0 +1,452 @@
+[
+  {
+    "id": "center1",
+    "type": "traffic_light",
+    "x": 200.0,
+    "y": 200.0,
+    "incLanes": [
+      "n1_c1_0",
+      "n1_c1_1",
+      "c2_c1_0",
+      "c2_c1_1",
+      "s1_c1_0",
+      "s1_c1_1",
+      "w1_c1_0",
+      "w1_c1_1"
+    ],
+    "intLanes": [
+      ":center1_0_0",
+      ":center1_1_0",
+      ":center1_1_1",
+      ":center1_20_0",
+      ":center1_21_0",
+      ":center1_5_0",
+      ":center1_6_0",
+      ":center1_6_1",
+      ":center1_22_0",
+      ":center1_23_0",
+      ":center1_10_0",
+      ":center1_11_0",
+      ":center1_11_1",
+      ":center1_24_0",
+      ":center1_25_0",
+      ":center1_15_0",
+      ":center1_16_0",
+      ":center1_16_1",
+      ":center1_26_0",
+      ":center1_27_0"
+    ],
+    "tlLogics": [
+      {
+        "programID": "0",
+        "type": "static",
+        "offset": 0.0,
+        "phases": [
+          {
+            "duration": 42.0,
+            "state": "GGGggrrrrrGGGggrrrrr"
+          },
+          {
+            "duration": 3.0,
+            "state": "yyyyyrrrrryyyyyrrrrr"
+          },
+          {
+            "duration": 42.0,
+            "state": "rrrrrGGGggrrrrrGGGgg"
+          },
+          {
+            "duration": 3.0,
+            "state": "rrrrryyyyyrrrrryyyyy"
+          }
+        ],
+        "controlledLanes": [
+          {
+            "linkIndex": 0,
+            "fromLane": "n1_c1_0",
+            "toLane": "c1_w1_0",
+            "via": ":center1_0_0",
+            "fromEdge": "n1_c1",
+            "toEdge": "c1_w1"
+          },
+          {
+            "linkIndex": 1,
+            "fromLane": "n1_c1_0",
+            "toLane": "c1_s1_0",
+            "via": ":center1_1_0",
+            "fromEdge": "n1_c1",
+            "toEdge": "c1_s1"
+          },
+          {
+            "linkIndex": 2,
+            "fromLane": "n1_c1_1",
+            "toLane": "c1_s1_1",
+            "via": ":center1_1_1",
+            "fromEdge": "n1_c1",
+            "toEdge": "c1_s1"
+          },
+          {
+            "linkIndex": 3,
+            "fromLane": "n1_c1_1",
+            "toLane": "c1_c2_1",
+            "via": ":center1_3_0",
+            "fromEdge": "n1_c1",
+            "toEdge": "c1_c2"
+          },
+          {
+            "linkIndex": 4,
+            "fromLane": "n1_c1_1",
+            "toLane": "c1_n1_1",
+            "via": ":center1_4_0",
+            "fromEdge": "n1_c1",
+            "toEdge": "c1_n1"
+          },
+          {
+            "linkIndex": 5,
+            "fromLane": "c2_c1_0",
+            "toLane": "c1_n1_0",
+            "via": ":center1_5_0",
+            "fromEdge": "c2_c1",
+            "toEdge": "c1_n1"
+          },
+          {
+            "linkIndex": 6,
+            "fromLane": "c2_c1_0",
+            "toLane": "c1_w1_0",
+            "via": ":center1_6_0",
+            "fromEdge": "c2_c1",
+            "toEdge": "c1_w1"
+          },
+          {
+            "linkIndex": 7,
+            "fromLane": "c2_c1_1",
+            "toLane": "c1_w1_1",
+            "via": ":center1_6_1",
+            "fromEdge": "c2_c1",
+            "toEdge": "c1_w1"
+          },
+          {
+            "linkIndex": 8,
+            "fromLane": "c2_c1_1",
+            "toLane": "c1_s1_1",
+            "via": ":center1_8_0",
+            "fromEdge": "c2_c1",
+            "toEdge": "c1_s1"
+          },
+          {
+            "linkIndex": 9,
+            "fromLane": "c2_c1_1",
+            "toLane": "c1_c2_1",
+            "via": ":center1_9_0",
+            "fromEdge": "c2_c1",
+            "toEdge": "c1_c2"
+          },
+          {
+            "linkIndex": 10,
+            "fromLane": "s1_c1_0",
+            "toLane": "c1_c2_0",
+            "via": ":center1_10_0",
+            "fromEdge": "s1_c1",
+            "toEdge": "c1_c2"
+          },
+          {
+            "linkIndex": 11,
+            "fromLane": "s1_c1_0",
+            "toLane": "c1_n1_0",
+            "via": ":center1_11_0",
+            "fromEdge": "s1_c1",
+            "toEdge": "c1_n1"
+          },
+          {
+            "linkIndex": 12,
+            "fromLane": "s1_c1_1",
+            "toLane": "c1_n1_1",
+            "via": ":center1_11_1",
+            "fromEdge": "s1_c1",
+            "toEdge": "c1_n1"
+          },
+          {
+            "linkIndex": 13,
+            "fromLane": "s1_c1_1",
+            "toLane": "c1_w1_1",
+            "via": ":center1_13_0",
+            "fromEdge": "s1_c1",
+            "toEdge": "c1_w1"
+          },
+          {
+            "linkIndex": 14,
+            "fromLane": "s1_c1_1",
+            "toLane": "c1_s1_1",
+            "via": ":center1_14_0",
+            "fromEdge": "s1_c1",
+            "toEdge": "c1_s1"
+          },
+          {
+            "linkIndex": 15,
+            "fromLane": "w1_c1_0",
+            "toLane": "c1_s1_0",
+            "via": ":center1_15_0",
+            "fromEdge": "w1_c1",
+            "toEdge": "c1_s1"
+          },
+          {
+            "linkIndex": 16,
+            "fromLane": "w1_c1_0",
+            "toLane": "c1_c2_0",
+            "via": ":center1_16_0",
+            "fromEdge": "w1_c1",
+            "toEdge": "c1_c2"
+          },
+          {
+            "linkIndex": 17,
+            "fromLane": "w1_c1_1",
+            "toLane": "c1_c2_1",
+            "via": ":center1_16_1",
+            "fromEdge": "w1_c1",
+            "toEdge": "c1_c2"
+          },
+          {
+            "linkIndex": 18,
+            "fromLane": "w1_c1_1",
+            "toLane": "c1_n1_1",
+            "via": ":center1_18_0",
+            "fromEdge": "w1_c1",
+            "toEdge": "c1_n1"
+          },
+          {
+            "linkIndex": 19,
+            "fromLane": "w1_c1_1",
+            "toLane": "c1_w1_1",
+            "via": ":center1_19_0",
+            "fromEdge": "w1_c1",
+            "toEdge": "c1_w1"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "center2",
+    "type": "traffic_light",
+    "x": 600.0,
+    "y": 200.0,
+    "incLanes": [
+      "n2_c2_0",
+      "n2_c2_1",
+      "e2_c2_0",
+      "e2_c2_1",
+      "s2_c2_0",
+      "s2_c2_1",
+      "c1_c2_0",
+      "c1_c2_1"
+    ],
+    "intLanes": [
+      ":center2_0_0",
+      ":center2_1_0",
+      ":center2_1_1",
+      ":center2_20_0",
+      ":center2_21_0",
+      ":center2_5_0",
+      ":center2_6_0",
+      ":center2_6_1",
+      ":center2_22_0",
+      ":center2_23_0",
+      ":center2_10_0",
+      ":center2_11_0",
+      ":center2_11_1",
+      ":center2_24_0",
+      ":center2_25_0",
+      ":center2_15_0",
+      ":center2_16_0",
+      ":center2_16_1",
+      ":center2_26_0",
+      ":center2_27_0"
+    ],
+    "tlLogics": [
+      {
+        "programID": "0",
+        "type": "static",
+        "offset": 0.0,
+        "phases": [
+          {
+            "duration": 42.0,
+            "state": "GGGggrrrrrGGGggrrrrr"
+          },
+          {
+            "duration": 3.0,
+            "state": "yyyyyrrrrryyyyyrrrrr"
+          },
+          {
+            "duration": 42.0,
+            "state": "rrrrrGGGggrrrrrGGGgg"
+          },
+          {
+            "duration": 3.0,
+            "state": "rrrrryyyyyrrrrryyyyy"
+          }
+        ],
+        "controlledLanes": [
+          {
+            "linkIndex": 0,
+            "fromLane": "n2_c2_0",
+            "toLane": "c2_c1_0",
+            "via": ":center2_0_0",
+            "fromEdge": "n2_c2",
+            "toEdge": "c2_c1"
+          },
+          {
+            "linkIndex": 1,
+            "fromLane": "n2_c2_0",
+            "toLane": "c2_s2_0",
+            "via": ":center2_1_0",
+            "fromEdge": "n2_c2",
+            "toEdge": "c2_s2"
+          },
+          {
+            "linkIndex": 2,
+            "fromLane": "n2_c2_1",
+            "toLane": "c2_s2_1",
+            "via": ":center2_1_1",
+            "fromEdge": "n2_c2",
+            "toEdge": "c2_s2"
+          },
+          {
+            "linkIndex": 3,
+            "fromLane": "n2_c2_1",
+            "toLane": "c2_e2_1",
+            "via": ":center2_3_0",
+            "fromEdge": "n2_c2",
+            "toEdge": "c2_e2"
+          },
+          {
+            "linkIndex": 4,
+            "fromLane": "n2_c2_1",
+            "toLane": "c2_n2_1",
+            "via": ":center2_4_0",
+            "fromEdge": "n2_c2",
+            "toEdge": "c2_n2"
+          },
+          {
+            "linkIndex": 5,
+            "fromLane": "e2_c2_0",
+            "toLane": "c2_n2_0",
+            "via": ":center2_5_0",
+            "fromEdge": "e2_c2",
+            "toEdge": "c2_n2"
+          },
+          {
+            "linkIndex": 6,
+            "fromLane": "e2_c2_0",
+            "toLane": "c2_c1_0",
+            "via": ":center2_6_0",
+            "fromEdge": "e2_c2",
+            "toEdge": "c2_c1"
+          },
+          {
+            "linkIndex": 7,
+            "fromLane": "e2_c2_1",
+            "toLane": "c2_c1_1",
+            "via": ":center2_6_1",
+            "fromEdge": "e2_c2",
+            "toEdge": "c2_c1"
+          },
+          {
+            "linkIndex": 8,
+            "fromLane": "e2_c2_1",
+            "toLane": "c2_s2_1",
+            "via": ":center2_8_0",
+            "fromEdge": "e2_c2",
+            "toEdge": "c2_s2"
+          },
+          {
+            "linkIndex": 9,
+            "fromLane": "e2_c2_1",
+            "toLane": "c2_e2_1",
+            "via": ":center2_9_0",
+            "fromEdge": "e2_c2",
+            "toEdge": "c2_e2"
+          },
+          {
+            "linkIndex": 10,
+            "fromLane": "s2_c2_0",
+            "toLane": "c2_e2_0",
+            "via": ":center2_10_0",
+            "fromEdge": "s2_c2",
+            "toEdge": "c2_e2"
+          },
+          {
+            "linkIndex": 11,
+            "fromLane": "s2_c2_0",
+            "toLane": "c2_n2_0",
+            "via": ":center2_11_0",
+            "fromEdge": "s2_c2",
+            "toEdge": "c2_n2"
+          },
+          {
+            "linkIndex": 12,
+            "fromLane": "s2_c2_1",
+            "toLane": "c2_n2_1",
+            "via": ":center2_11_1",
+            "fromEdge": "s2_c2",
+            "toEdge": "c2_n2"
+          },
+          {
+            "linkIndex": 13,
+            "fromLane": "s2_c2_1",
+            "toLane": "c2_c1_1",
+            "via": ":center2_13_0",
+            "fromEdge": "s2_c2",
+            "toEdge": "c2_c1"
+          },
+          {
+            "linkIndex": 14,
+            "fromLane": "s2_c2_1",
+            "toLane": "c2_s2_1",
+            "via": ":center2_14_0",
+            "fromEdge": "s2_c2",
+            "toEdge": "c2_s2"
+          },
+          {
+            "linkIndex": 15,
+            "fromLane": "c1_c2_0",
+            "toLane": "c2_s2_0",
+            "via": ":center2_15_0",
+            "fromEdge": "c1_c2",
+            "toEdge": "c2_s2"
+          },
+          {
+            "linkIndex": 16,
+            "fromLane": "c1_c2_0",
+            "toLane": "c2_e2_0",
+            "via": ":center2_16_0",
+            "fromEdge": "c1_c2",
+            "toEdge": "c2_e2"
+          },
+          {
+            "linkIndex": 17,
+            "fromLane": "c1_c2_1",
+            "toLane": "c2_e2_1",
+            "via": ":center2_16_1",
+            "fromEdge": "c1_c2",
+            "toEdge": "c2_e2"
+          },
+          {
+            "linkIndex": 18,
+            "fromLane": "c1_c2_1",
+            "toLane": "c2_n2_1",
+            "via": ":center2_18_0",
+            "fromEdge": "c1_c2",
+            "toEdge": "c2_n2"
+          },
+          {
+            "linkIndex": 19,
+            "fromLane": "c1_c2_1",
+            "toLane": "c2_c1_1",
+            "via": ":center2_19_0",
+            "fromEdge": "c1_c2",
+            "toEdge": "c2_c1"
+          }
+        ]
+      }
+    ]
+  }
+]

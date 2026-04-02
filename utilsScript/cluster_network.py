@@ -1,6 +1,6 @@
 import json, os
 
-BASE = "urbanNetworks/Simplified_bolo_center"
+BASE = "urbanNetworks/2cross"
 DATA = os.path.join(BASE, "data")
 
 tls = json.load(open(os.path.join(DATA, "tls.json")))

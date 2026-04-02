@@ -1,0 +1,40 @@
+{
+  "north_west": {
+    "tls": [
+      "center1"
+    ],
+    "edges": [
+      "c1_n1",
+      "c1_w1",
+      "n1_c1"
+    ]
+  },
+  "north_east": {
+    "tls": [
+      "center2"
+    ],
+    "edges": [
+      "c2_c1",
+      "c2_n2",
+      "e2_c2",
+      "n2_c2"
+    ]
+  },
+  "south_west": {
+    "tls": [],
+    "edges": [
+      "c1_s1",
+      "s1_c1",
+      "w1_c1"
+    ]
+  },
+  "south_east": {
+    "tls": [],
+    "edges": [
+      "c1_c2",
+      "c2_e2",
+      "c2_s2",
+      "s2_c2"
+    ]
+  }
+}
