@@ -6,11 +6,9 @@ Progetto Python per la gestione dei semafori tramite sistema Agentic AI, con sup
 
 ```
 TrafficAgenticAi/
-├── utilsScript/          # Script Python utili per l'elaborazione
-├── agenticArchitecture/  # Script per supporto sistema Agentic AI e supporto alla simulazione SUMO tramie TraCI
+├── clusteringTopology/   # Eseguire create_topologies.py (che si avvale di topology_builder.py) per la creazione delle topologie di ogni agent
+├── agenticArchitecture/  # Nella cartella agent sono presenti i file che rappresentano l'agent, in simulation l'intermediario per la simulazione
 ├── urbanNetworks/        # Reti stradali urbane utilizzate nelle simulazioni
-├── results/              # Output e risultati delle elaborazioni
-└── .gitignore            # File di esclusione Git
 ```
 
 ## Requisiti
