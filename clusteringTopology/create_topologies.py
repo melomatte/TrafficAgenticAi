@@ -1,3 +1,7 @@
+'''
+python3 clusteringTopology/create_topologies.py --sumocfg urbanNetworks/2cross/sim.sumocfg --k 1 --outdir urbanNetworks/2cross/data
+'''
+
 import os
 import argparse
 import json
