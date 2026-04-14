@@ -10,3 +10,7 @@ results/
 # Python cache
 __pycache__/
 *.pyc
+
+venv/
+
+requirements.txt
