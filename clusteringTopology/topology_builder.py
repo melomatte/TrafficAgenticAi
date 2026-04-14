@@ -114,11 +114,15 @@ def compute_clusters(k, tls_data, edges_data):
 
     return clusters
 
+# topology_builder.py (solo la parte da sostituire in fondo)
+# ... [lascia invariato tutto il codice precedente: extract_traci_data, extract_junction_data, compute_clusters] ...
+
 def build_agent_topologies(clusters, junctions_data):
-    """Genera i dizionari di topologia per ogni singolo agente."""
+    """Genera i dizionari di topologia per ogni singolo agente in formato COMPATTO (Token-Slim)."""
     edge_to_destination = {}
     junctions_dict = {j["id"]: j for j in junctions_data}
     
+    # Mappatura globale: ogni edge_in porta al suo junction_id
     for j in junctions_data:
         for prog in j.get("tlLogics", []):
             for lane in prog.get("controlledLanes", []):
@@ -128,17 +132,20 @@ def build_agent_topologies(clusters, junctions_data):
     topologies = {}
     for agent_id, data in clusters.items():
         agent_edges = set(data["edges"])
+        # Inizializziamo il dizionario con le chiavi corte
         topology = {
-            "agent_id": agent_id, "intersections": [],
-            "internal_edges": list(agent_edges),
-            "entry_points": set(), "exit_points": set()
+            "id": agent_id, 
+            "in": set(), 
+            "out": set(),
+            "graph": [] 
         }
         
         for j_id in data["tls"]:
             if j_id not in junctions_dict: continue
             
             j_data = junctions_dict[j_id]
-            connections, seen = [], set()
+            conn_strings = []
+            seen = set()
             
             for prog in j_data.get("tlLogics", []):
                 for lane in prog.get("controlledLanes", []):
@@ -146,16 +153,22 @@ def build_agent_topologies(clusters, junctions_data):
                     if f_edge and t_edge and (f_edge, t_edge) not in seen:
                         seen.add((f_edge, t_edge))
                         
-                        if f_edge not in agent_edges: topology["entry_points"].add(f_edge)
-                        if t_edge not in agent_edges: topology["exit_points"].add(t_edge)
+                        # Aggiorniamo gli entry/exit point dell'area
+                        if f_edge not in agent_edges: topology["in"].add(f_edge)
+                        if t_edge not in agent_edges: topology["out"].add(t_edge)
                         
-                        leads_to = edge_to_destination.get(t_edge, "Esterno_Rete")
-                        connections.append({"from_edge": f_edge, "to_edge": t_edge, "leads_to_intersection": leads_to})
+                        # Calcoliamo la destinazione e abbreviamo se esterna
+                        leads_to = edge_to_destination.get(t_edge, "EXT")
+                        target = leads_to if leads_to != "EXT" else "EXT"
+                        
+                        # Stringa compatta: E_IN>E_OUT(DEST)
+                        conn_strings.append(f"{f_edge}>{t_edge}({target})")
 
-            topology["intersections"].append({"id": j_id, "type": j_data["type"], "connections": connections})
+            # Aggiungiamo l'incrocio come singola riga testuale
+            topology["graph"].append(f"{j_id}: " + ", ".join(conn_strings))
             
-        topology["entry_points"] = list(topology["entry_points"])
-        topology["exit_points"] = list(topology["exit_points"])
+        topology["in"] = list(topology["in"])
+        topology["out"] = list(topology["out"])
         topologies[agent_id] = topology
         
     return topologies

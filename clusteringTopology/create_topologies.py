@@ -1,7 +1,3 @@
-'''
-python3 clusteringTopology/create_topologies.py --sumocfg urbanNetworks/2cross/sim.sumocfg --k 1 --outdir urbanNetworks/2cross/data
-'''
-
 import os
 import argparse
 import json
@@ -53,13 +49,14 @@ def main():
     clusters = tb.compute_clusters(args.k, tls_data, edges_data)
     save_json(clusters, os.path.join(args.outdir, "clusters.json"))
 
-    print("4. Generazione Mappe Topologiche per Agenti...")
+    print("4. Generazione Mappe Topologiche (Modo Compatto) per Agenti...")
     topologies = tb.build_agent_topologies(clusters, junctions_data)
     
     for agent_id, topo in topologies.items():
         filepath = os.path.join(agent_dir, f"{agent_id}_topology.json")
         save_json(topo, filepath)
-        print(f"   ✅ Salvato: {filepath} (Incroci: {len(topo['intersections'])})")
+        # NOTA: qui ho aggiornato topo['intersections'] in topo['graph']
+        print(f"   ✅ Salvato: {filepath} (Incroci: {len(topo['graph'])})")
 
     print("\n🎉 Pipeline completata! Tutti i file sono pronti per la simulazione.")
 

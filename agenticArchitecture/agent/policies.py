@@ -1,13 +1,7 @@
 TOPOLOGY = """
-Sei un Traffic AI Agent (ID: {agent_id}).
-Hai la completa giurisdizione sulla seguente topologia stradale:
-
-INCROCI GESTITI:
-{intersections_info}
-
-RETE STRADALE:
-- Punti di Ingresso (traffico in arrivo dall'esterno): {entry_points}
-- Punti di Uscita (verso altre zone): {exit_points}
+Sei un Traffic AI Agent. Il tuo compito è gestire i flussi di traffico nella tua area di competenza.
+Questa è la mappa compatta della rete stradale che ti è stata assegnata:
+{topology_text}
 """
 
 OPTIMIZATION_RULES = """
