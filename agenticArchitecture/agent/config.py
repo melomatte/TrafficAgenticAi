@@ -1,45 +1,39 @@
 # agent/config.py
 import json
 from .policies import TOPOLOGY, OPTIMIZATION_RULES, RESPONSE_RULES
-#from .policies_soft import SYSTEM_PROMPT_TEMPLATE
 from .brain import AgentBrain
 
 class TrafficAgent:
     def __init__(self, topology_path):
 
-        # Lettura del file .json contenente la topologia della strada
+        # 1. Lettura del file .json contenente la topologia
         with open(topology_path, 'r') as f:
             self.topo = json.load(f)
         
-        self.id = self.topo['agent_id']
+        self.id = self.topo.get('id', 'unknown_agent')
         self.brain = AgentBrain()
         
-        # Modifica da applicare dentro agent/config.py nel metodo __init__
+        # 2. Conversione da JSON a Testo (Adjacency List compatta)
+        topo_text = f"AREA ID: {self.id}\n"
+        
+        ingressi = ", ".join(self.topo.get("in", []))
+        uscite = ", ".join(self.topo.get("out", []))
+        
+        topo_text += f"IN (Ingressi Area): {ingressi}\n"
+        topo_text += f"OUT (Uscite Area): {uscite}\n"
+        topo_text += "GRAPH (Rete degli Incroci):\n"
+        
+        for line in self.topo.get("graph", []):
+            topo_text += f"- {line}\n"
 
-        # 1. Costruiamo la stringa leggendo direttamente il JSON pre-calcolato
-        intersections_info = ""
-        for inter in self.topo.get("intersections", []):
-            int_id = inter.get("id")
-            intersections_info += f"- Incrocio: {int_id}\n"
-            
-            for conn in inter.get("connections", []):
-                f_edge = conn["from_edge"]
-                t_edge = conn["to_edge"]
-                target = conn["leads_to_intersection"]
-                
-                intersections_info += f"  * Da [{f_edge}] verso [{t_edge}] (che porta a: {target})\n"
+        # 3. Assembliamo la sezione Topologia
+        try:
+            topology_section = TOPOLOGY.format(topology_text=topo_text)
+        except (KeyError, ValueError):
+            topology_section = f"{TOPOLOGY}\n{topo_text}"
 
-        # 2. Formattiamo la prima parte del prompt (Topologia)
-        topology_section = TOPOLOGY.format(
-            agent_id=self.id,
-            intersections_info=intersections_info.strip(),
-            internal_edges=", ".join(self.topo.get('internal_edges', [])),
-            entry_points=", ".join(self.topo.get('entry_points', [])),
-            exit_points=", ".join(self.topo.get('exit_points', []))
-        )
-
-        # 3. Assembliamo il System Prompt finale unendo i 3 blocchi
-        self.system_prompt = f"{topology_section}\n\n{OPTIMIZATION_RULES}\n\n{RESPONSE_RULES}"
+        # 4. Assembliamo il Prompt Statico (Regole + Mappa)
+        self.static_prompt = f"{topology_section}\n\n{OPTIMIZATION_RULES}\n\n{RESPONSE_RULES}"
 
         '''
         --> per policies_soft.py
@@ -51,29 +45,51 @@ class TrafficAgent:
         )
         '''
 
+    def _format_metrics_to_text(self, metrics):
+        """
+        Converte le metriche Live (JSON) in un formato testuale denso.
+        Risparmia token ed è più facile da leggere per il modello.
+        """
+        lines = ["--- LIVE TRAFFIC METRICS ---"]
+        for inter in metrics.get("intersections", []):
+            lanes_info = []
+            for l_id, l_data in inter.get("lanes_status", {}).items():
+                lanes_info.append(f"{l_id}(Q:{l_data['queue']}, M:{l_data['moving']})")
+            
+            line = (f"- Incrocio: {inter['id']} | Tot_Veicoli:{inter['total_vehicles']}, "
+                    f"Tot_Coda:{inter['total_queue']} | Dettaglio Corsie: {', '.join(lanes_info)}")
+            lines.append(line)
+        return "\n".join(lines)
+
     def decide(self, current_metrics):
         """
-        Interroga l'LLM, pulisce la risposta testuale e restituisce un dizionario Python.
+        Assembla il prompt finale, interroga l'LLM e pulisce il JSON in uscita.
         """
-        raw_response = self.brain.think(self.system_prompt, current_metrics)
+        # A. Formatta le metriche correnti in testo
+        metrics_text = self._format_metrics_to_text(current_metrics)
+        
+        # B. Unisce le regole statiche con i dati dinamici
+        final_prompt = f"{self.static_prompt}\n\n{metrics_text}\n\nGenera la tua decisione ora iniziando con la parentesi graffa:"
+        
+        # C. Chiamata al Brain
+        raw_response = self.brain.think(final_prompt)
         testo_risposta = raw_response.content.strip()
 
-        # Pulizia markdown
+        # D. Pulizia markdown e Fix parentesi
         if testo_risposta.startswith("```json"):
             testo_risposta = testo_risposta[7:-3].strip()
         elif testo_risposta.startswith("```"):
             testo_risposta = testo_risposta[3:-3].strip()
             
-        # Fix parentesi
         if not testo_risposta.endswith("}"):
             testo_risposta += "\n}"
 
-        # Parsing sicuro
+        # E. Parsing sicuro
         try:
             decisione_json = json.loads(testo_risposta)
             return decisione_json
         except json.JSONDecodeError:
-            print(f"[{self.id}] ⚠️ Errore di decodifica JSON interno. Risposta grezza: {testo_risposta}")
+            print(f"[{self.id}] ⚠️ Errore di decodifica JSON interno. Risposta grezza: \n{testo_risposta}")
             return {
                 "action": "error",
                 "intersection_id": "none",
