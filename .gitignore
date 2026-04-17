@@ -13,4 +13,7 @@ __pycache__/
 
 venv/
 
+# Chiavi API
+gemini_key.txt 
+
 requirements.txt

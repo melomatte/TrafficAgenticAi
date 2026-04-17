@@ -1,15 +1,21 @@
+"""
+Comando per l'esecuzione:
+    python3 agenticArchitecture/main.py --topology urbanNetworks/2cross/data/agent_topologies/agent_0_topology.json --sumo_cfg urbanNetworks/2cross/sim.sumocfg --provider cloud
+"""
+
 import argparse
 import traci
 from agent import TrafficAgent
 from simulation.sumo_adapter import SumoAdapter
 from simulation.metrics import get_agent_metrics
 
-def run_simulation(topology_path, sumo_cfg, sumo_bin, decision_interval):
+def run_simulation(topology_path, sumo_cfg, sumo_bin, decision_interval, provider, model):
     
-    # Inizializzazione dell'agent
-    print("🧠 Inizializzazione Agent...")
-    agent = TrafficAgent(topology_path)
-    print(f"✅ Agente {agent.id} pronto per {len(agent.topo['intersections'])} incroci.")
+    # Inizializzazione TrafficAgent con le opzioni scelte
+    print(f"🧠 Inizializzazione Agent ({provider})...")
+    agent = TrafficAgent(topology_path, provider=provider, model_name=model)
+
+    print(f"✅ Agente {agent.id} pronto per {len(agent.topo['graph'])} incroci.")
 
     # Avvio simulazione SUMO -> ogni decision_interval viene interrogato l'agent
     print("🚗 Avvio simulazione SUMO...")
@@ -31,16 +37,7 @@ def run_simulation(topology_path, sumo_cfg, sumo_bin, decision_interval):
                 current_metrics = get_agent_metrics(agent.topo, adapter)
                 
                 # Prompting all'agent con le metriche raccolte e restituzione della risposta
-                decisione_json = agent.decide(current_metrics)
-                
-                if decisione_json.get("action") != "error":
-                    print("✅ DECISIONE PRESA:")
-                    print(f"  ➡️ AZIONE:      {decisione_json.get('action')}")
-                    print(f"  ➡️ INCROCIO:    {decisione_json.get('intersection_id')}")
-                    print(f"  ➡️ POLICY:      {decisione_json.get('policy')}")
-                    print(f"  ➡️ MOTIVAZIONE: {decisione_json.get('reasoning')}")
-                else:
-                    print("⚠️ L'agente ha saltato il turno per un errore di ragionamento.")
+                agent.decide(current_metrics)
 
             step += 1
             
@@ -56,6 +53,8 @@ if __name__ == "__main__":
     parser.add_argument("--sumo_cfg", required=True, help="Percorso file .sumocfg")
     parser.add_argument("--sumo_bin", default="sumo-gui", help="Eseguibile SUMO")
     parser.add_argument("--interval", type=int, default=60, help="Frequenza decisionale")
+    parser.add_argument("--provider", choices=["local", "cloud"], default="local", help="Scegli se usare LM Studio (local) o Gemini (cloud)")
+    parser.add_argument("--model", default="gemini-2.5-pro", choices=["gemini-2.5-pro", "vertex_ai/mistral-small-2503"], help="Nome del modello cloud")
     
     args = parser.parse_args()
-    run_simulation(args.topology, args.sumo_cfg, args.sumo_bin, args.interval)
+    run_simulation(args.topology, args.sumo_cfg, args.sumo_bin, args.interval, args.provider, args.model)
