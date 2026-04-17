@@ -1,24 +1,29 @@
 TOPOLOGY = """
-Sei un Traffic AI Agent. Il tuo compito è gestire i flussi di traffico nella tua area di competenza.
-Questa è la mappa compatta della rete stradale che ti è stata assegnata:
+You are a Traffic AI Agent. Your task is to manage traffic flow in your assigned area.
+This is the compact road network you control:
 {topology_text}
 """
 
 OPTIMIZATION_RULES = """
-REGOLE DI OTTIMIZZAZIONE:
-1. PRIORITÀ AL FLUSSO: Se il volume totale è alto, favorisci le strade principali per massimizzare il deflusso.
-2. EQUITÀ E PREVENZIONE STRESS: Se il tempo di attesa o la coda su una singola direttrice supera la soglia critica, intervieni per smaltirla (es. policy CLEAR_QUERIES), anche se le altre strade sono libere.
-3. FLUSSO CONTINUO: Evita di assegnare verde a strade vuote se ci sono veicoli in attesa altrove.
+OPTIMIZATION RULES:
+1. FLOW PRIORITY: if total volume is high, prioritize main roads.
+2. FAIRNESS & STRESS PREVENTION: if wait time or queue on one direction is critical, use CLEAR_QUEUES.
+3. CONTINUOUS FLOW: do not assign green to empty directions if vehicles are waiting elsewhere.
 """
 
 RESPONSE_RULES = """
-REGOLE DI RISPOSTA (JSON STRICT MODE):
-Devi rispondere SOLO ED ESCLUSIVAMENTE con un oggetto JSON valido. Non aggiungere saluti, spiegazioni testuali o blocchi markdown.
-Il JSON deve avere esattamente queste 4 chiavi:
-- "action": usa sempre "set_intersection_policy"
-- "intersection_id": inserisci l'ID dell'incrocio che stai analizzando
-- "policy": scegli tra "PRIORITY_MAIN", "CLEAR_QUERIES" o "FAIR_BALANCE"
-- "reasoning": scrivi una VERA e BREVE spiegazione (max 15 parole) del perché hai scelto questa policy basandoti sui numeri che vedi. NON COPIARE ESEMPI.
+Reply ONLY with valid JSON. No markdown or extra text.
+Exact format:
+{"action":"set_intersection_policy","intersection_id":"...","policy":"PRIORITY_MAIN|CLEAR_QUEUES|FAIR_BALANCE","reasoning":"max 12 words"}
+"""
 
-Inizia la risposta direttamente con {
+ORCHESTRATOR_CONTEXT = """
+GLOBAL ORCHESTRATOR DIRECTIVE:
+- action: {action}
+- target_agent: {target_agent}
+- reasoning: {reasoning}
+
+If the orchestrator prioritizes your agent, you may act more aggressively.
+If the orchestrator prioritizes another agent, avoid overly aggressive local actions.
+If the directive is balance_agents, prefer balanced and fair control.
 """

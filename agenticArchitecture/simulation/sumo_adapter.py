@@ -80,3 +80,41 @@ class SumoAdapter:
             "total_vehicles": total_vehicles,
             "lanes": lane_data,
         }
+
+    def get_cluster_metrics(self, intersection_ids):
+        """
+        Raccoglie metriche aggregate per un gruppo di incroci.
+        Restituisce un dict compatibile con TrafficAgent.decide().
+        """
+        data = {"intersections": []}
+
+        for inter_id in intersection_ids:
+            try:
+                state = self.get_state(inter_id)
+            except Exception:
+                continue
+
+            lanes_status = {}
+            total_queue = 0
+            total_vehicles = 0
+
+            for lane_id, lane_data in state.get("lanes", {}).items():
+                queue = lane_data.get("halting", 0)
+                moving = lane_data.get("vehicle_count", 0)
+
+                lanes_status[lane_id] = {
+                    "queue": queue,
+                    "moving": moving
+                }
+
+                total_queue += queue
+                total_vehicles += moving
+
+            data["intersections"].append({
+                "id": inter_id,
+                "total_queue": total_queue,
+                "total_vehicles": total_vehicles,
+                "lanes_status": lanes_status
+            })
+
+        return data

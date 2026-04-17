@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-03-26T12:30:48.676575+01:00 by Eclipse SUMO GUI v1_26_0+0818-8fa21e3b56a
+<!-- generated on 2026-04-08T12:49:40.366320+01:00 by Eclipse SUMO GUI v1_26_0+0818-8fa21e3b56a
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/osm.net.xml.gz"/>
-        <route-files value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/heavy.rou.xml"/>
-        <additional-files value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/rilevazioni/output.add.xml"/>
+        <net-file value="urbanNetworks/Prova_VialeAldini/osm.net.xml.gz"/>
+        <route-files value="urbanNetworks/Prova_VialeAldini/heavy.rou.xml"/>
+        <additional-files value="urbanNetworks/Prova_VialeAldini/rilevazioni/output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/output/tripinfos.xml"/>
-        <statistic-output value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/output/stats.xml"/>
+        <tripinfo-output value="urbanNetworks/Prova_VialeAldini/output/tripinfos.xml"/>
+        <statistic-output value="urbanNetworks/Prova_VialeAldini/output/stats.xml"/>
     </output>
 
     <processing>
@@ -30,25 +30,21 @@
         <no-step-log value="true"/>
     </report>
 
-    <traci_server>
-        <remote-port value="55723"/>
-    </traci_server>
-
     <gui_only>
-        <gui-settings-file value="/Users/raffaele/PycharmProjects/TrafficAgenticAi/Simulazione Sumo/Prova_VialeAldini/osm.view.xml"/>
+        <gui-settings-file value="urbanNetworks/Prova_VialeAldini/osm.view.xml"/>
     </gui_only>
 
 </sumoConfiguration>
 -->
 
 <statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
-    <performance clockBegin="1774524648.69" clockEnd="1774524694.45" clockDuration="45.76" traciDuration="30.97" realTimeFactor="5.33" vehicleUpdatesPerSecond="556.85" personUpdatesPerSecond="0.00" begin="0.00" end="244.00" duration="244.00"/>
-    <vehicles loaded="11961" inserted="403" running="320" waiting="2198"/>
-    <teleports total="0" jam="0" yield="0" wrongLane="0"/>
+    <performance clockBegin="1775645380.38" clockEnd="1775646421.77" clockDuration="1041.39" traciDuration="0.00" realTimeFactor="0.65" vehicleUpdatesPerSecond="121.26" personUpdatesPerSecond="0.00" begin="0.00" end="680.00" duration="680.00"/>
+    <vehicles loaded="806" inserted="652" running="331" waiting="28"/>
+    <teleports total="5" jam="1" yield="1" wrongLane="3"/>
     <safety collisions="0" emergencyStops="0" emergencyBraking="0"/>
     <persons loaded="0" running="0" jammed="0"/>
     <personTeleports total="0" abortWait="0" wrongDest="0"/>
-    <vehicleTripStatistics count="83" routeLength="704.66" speed="7.21" duration="101.20" waitingTime="7.41" timeLoss="24.45" departDelay="0.30" departDelayWaiting="-1.00" totalTravelTime="8400.00" totalDepartDelay="25.00"/>
+    <vehicleTripStatistics count="321" routeLength="806.55" speed="6.07" duration="142.54" waitingTime="21.19" timeLoss="48.02" departDelay="0.61" departDelayWaiting="-1.00" totalTravelTime="45757.00" totalDepartDelay="195.00"/>
     <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
     <rideStatistics number="0"/>
     <transportStatistics number="0"/>

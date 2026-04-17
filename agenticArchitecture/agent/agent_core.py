@@ -21,6 +21,12 @@ e la struttura logica del processo decisionale.
 import json
 from .policies import TOPOLOGY, OPTIMIZATION_RULES, RESPONSE_RULES
 from .llm_connector import AgentBrain
+from agenticArchitecture.agent.policies import (
+    TOPOLOGY,
+    OPTIMIZATION_RULES,
+    RESPONSE_RULES,
+    ORCHESTRATOR_CONTEXT,
+)
 
 class TrafficAgent:
 
@@ -65,24 +71,55 @@ class TrafficAgent:
             lines.append(line)
         return "\n".join(lines)
 
-
-    def decide(self, current_metrics):
-
-        # 1. Assemblaggio prompt da inivare all'LLM
+    def decide(self, current_metrics, global_directive=None):
         metrics_text = self._format_metrics_to_text(current_metrics)
-        final_prompt = f"{self.static_prompt}\n\n{metrics_text}\n\nGenera la tua decisione ora iniziando con la parentesi graffa:"
-        
-        # 2. Invio prompt al Brain (reale responsabile delle chiamate)
-        raw_response = self.brain.think(final_prompt)
-        
-        # 3. Ricezione della risposta
-        if raw_response is None or raw_response.content is None:    # Risposta vuota
-            print(f"\n⚠️ [{self.id}] ATTENZIONE: Ricevuta risposta NULLA dal modello.")
-        else:                                                       # Risposta piena
-            testo_risposta = raw_response.content.strip()
 
-            print("\n" + "═"*60)
-            print(f"🧠 AGENTE: {self.id}")
-            print(f"📡 RISPOSTA RICEVUTA:")
-            print(testo_risposta) 
-            print("═"*60 + "\n")
+        if global_directive is None:
+            global_directive = {
+                "action": "hold_current",
+                "target_agent": None,
+                "reasoning": "No global directive yet"
+            }
+
+        orchestrator_text = ORCHESTRATOR_CONTEXT.format(
+            action=global_directive.get("action"),
+            target_agent=global_directive.get("target_agent"),
+            reasoning=global_directive.get("reasoning"),
+        )
+
+        final_prompt = (
+            f"{self.static_prompt}\n\n"
+            f"{orchestrator_text}\n\n"
+            f"{metrics_text}\n\n"
+            f"Generate your decision now starting with {{:"
+        )
+
+        raw_response = self.brain.think(final_prompt)
+
+        if raw_response is None or raw_response.content is None:
+            print(f"\n⚠️ [{self.id}] risposta nulla.")
+            return []
+
+        text = raw_response.content.strip()
+
+        print("\n" + "═" * 60)
+        print(f"🧠 AGENTE: {self.id}")
+        print("📡 RISPOSTA RICEVUTA:")
+        print(text)
+        print("═" * 60 + "\n")
+
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        try:
+            parsed = json.loads(text)
+
+            if isinstance(parsed, dict):
+                return [parsed]
+
+            if isinstance(parsed, list):
+                return parsed
+
+            return []
+        except Exception:
+            print(f"⚠️ [{self.id}] JSON non valido: {text}")
+            return []
