@@ -60,12 +60,27 @@ class TrafficAgent:
     def _format_metrics_to_text(self, metrics):
         stress = metrics.get("stress_index", 0)
         
-        # Traduzione qualitativa dello stress per l'LLM
-        if stress < 20: status = "FLUIDO"
-        elif stress < 50: status = "MODERATO"
-        elif stress < 80: status = "CRITICO"
-        else: status = "EMERGENZA"
-
+        # English translation of qualitative stress and implicit behavioral directives
+        if stress < 20: 
+            status = "FLUID"
+            explanation = "Traffic is flowing smoothly. No urgent intervention required, maintain current efficiency."
+        elif stress < 50: 
+            status = "MODERATE"
+            explanation = "Traffic volume is manageable. Monitor conditions to prevent future congestion."
+        elif stress < 80: 
+            status = "CRITICAL"
+            explanation = "Significant queues are forming. Intervention is required to unblock traffic flows."
+        else: 
+            status = "EMERGENCY"
+            explanation = "High risk of gridlock. Absolute priority is immediate queue clearance and deadlock prevention."
+        
+        # Return the extremely token-efficient, English-only prompt
+        return (
+            f"--- ZONE STATUS: {status} (Stress Index: {stress}/100) ---\n"
+            f"Operational Context: {explanation}"
+        )
+    
+        """
         lines = [f"--- ZONE STATUS: {status} (Stress Index: {stress}/100) ---"]
         for inter in metrics.get("intersections", []):
             lanes_info = [f"{l_id}(Q:{d['queue']}, M:{d['moving']})" 
@@ -74,6 +89,9 @@ class TrafficAgent:
             lines.append(f"- Incrocio: {inter['id']} | Tot_Veicoli:{inter['total_vehicles']}, "
                          f"Tot_Coda:{inter['total_queue']} | Dettaglio: {', '.join(lanes_info)}")
         return "\n".join(lines)
+
+        def _format_metrics_to_text(self, metrics):
+        stress = metrics.get("stress_index", 0)"""
 
     def decide(self, current_metrics, global_directive=None):
         metrics_text = self._format_metrics_to_text(current_metrics)

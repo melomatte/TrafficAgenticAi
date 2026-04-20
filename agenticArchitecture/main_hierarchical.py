@@ -97,7 +97,6 @@ def run_simulation(agents_dir, sumo_cfg, sumo_bin, decision_interval, provider, 
                     # Aggiorniamo agent_outputs pescando i valori dal dizionario enriched_metrics
                     agent_outputs.append({
                         "agent_id": agent.id,
-                        "zone": getattr(agent, "zone", "unknown"),
                         "priority_score": enriched_metrics.get("priority_score", 0), # Recuperato dal dict
                         "stress_index": enriched_metrics.get("stress_index", 0),     # Aggiunto per l'orchestratore
                         "actions": actions
