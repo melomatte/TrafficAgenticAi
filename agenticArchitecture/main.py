@@ -52,8 +52,8 @@ if __name__ == "__main__":
     parser.add_argument("--topology", required=True, help="Percorso del file topology.json")
     parser.add_argument("--sumo_cfg", required=True, help="Percorso file .sumocfg")
     parser.add_argument("--sumo_bin", default="sumo-gui", help="Eseguibile SUMO")
-    parser.add_argument("--interval", type=int, default=60, help="Frequenza decisionale")
-    parser.add_argument("--provider", choices=["local", "cloud"], default="local", help="Scegli se usare LM Studio (local) o Gemini (cloud)")
+    parser.add_argument("--decision_interval", type=int, default=60, help="Frequenza decisionale")
+    parser.add_argument("--provider", choices=["local", "cloud"], default="cloud", help="Scegli se usare LM Studio (local) o Gemini (cloud)")
     parser.add_argument("--model", default="gemini-2.5-pro", choices=["gemini-2.5-pro", "vertex_ai/mistral-small-2503"], help="Nome del modello cloud")
     
     args = parser.parse_args()

@@ -6,13 +6,16 @@ Entry point gerarchico:
 - fa decidere gli agenti usando anche la direttiva globale precedente
 - invia gli output all'orchestratore
 - aggiorna la direttiva globale per il ciclo successivo
+
+Comando per l'esecuzione:
+    python3 agenticArchitecture/main_hierarchical.py --sumo_cfg urbanNetworks/2cross/sim.sumocfg --sumo_bin /usr/bin/sumo --agents_dir urbanNetworks/2cross/data/agent_topologies/
 """
 
 import argparse
 import glob
 import json
 import os
-
+import traci
 from agenticArchitecture.agent.agent_core import TrafficAgent
 from agenticArchitecture.orchestrator.orchestrator_core import GlobalOrchestrator
 from agenticArchitecture.simulation.sumo_adapter import SumoAdapter
@@ -34,6 +37,7 @@ def load_agents_from_dir(agents_dir, provider, model):
             provider=provider
         )
         agent.zone = "unknown"
+        print(f"✅ Agente {agent.id} pronto per {len(agent.topo['graph'])} incroci.")
         agents.append(agent)
 
     return agents
@@ -61,24 +65,15 @@ def extract_intersections_from_topology(agent):
     return topo_intersections
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sumo_cfg", required=True)
-    parser.add_argument("--agents_dir", required=True)
-    parser.add_argument("--sumo_bin", default="/Users/raffaele/sumo/bin/sumo")
-    parser.add_argument("--provider", default="cloud")
-    parser.add_argument("--model", default="gemini-2.5-pro")
-    parser.add_argument("--decision_interval", type=int, default=60)
-    parser.add_argument("--max_steps", type=int, default=1000)
-    parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--delay", type=int, default=None)
-    args = parser.parse_args()
+def run_simulation(agents_dir, sumo_cfg, sumo_bin, decision_interval, provider, model):
+    
+    # Recupero informazioni agent e loro topologie
+    print("📂 Agents loaded from:", args.agents_dir)
+    agents = load_agents_from_dir(agents_dir, provider, model)
 
-    agents = load_agents_from_dir(args.agents_dir, args.provider, args.model)
+    # Inizializzazione orchestratore
     orchestrator = GlobalOrchestrator(model_name=args.model, provider=args.provider)
-
-    adapter = SumoAdapter(args.sumo_bin, args.sumo_cfg)
-    adapter.start(use_gui=args.gui, delay=args.delay)
+    print(f"✅ Orchestratore pronto per coordinare {len(agents)} agent")
 
     # Direttiva globale iniziale neutra
     global_directive = {
@@ -87,65 +82,81 @@ def main():
         "reasoning": "Initial neutral directive"
     }
 
-    print(f"✅ Started {len(agents)} agents")
-    print("📂 Agents loaded from:", args.agents_dir)
+    # Avvio simulazione SUMO -> ogni decision_interval viene interrogato l'agent
+    print("🚗 Avvio simulazione SUMO...")
+    adapter = SumoAdapter(sumo_bin, sumo_cfg)
+    adapter.start(use_gui=True, delay="200")
+
+    step = 0
+    print("--- SIMULAZIONE AVVIATA ---")
 
     try:
-        for step in range(args.max_steps):
+        while traci.simulation.getMinExpectedNumber() > 0:
             adapter.step()
 
-            if step % args.decision_interval != 0:
-                continue
+            # Momento decisionale da parte dell'agent
+            if step > 0 and step % decision_interval == 0:
 
-            print(f"\n⏱️ [Step {step}] Hierarchical decision...")
+                print(f"\n⏱️ [Step {step}] Hierarchical decision...")
 
-            print("\n🧭 GLOBAL DIRECTIVE IN USE:")
-            print(json.dumps(global_directive, indent=2, ensure_ascii=False))
+                print("\n🧭 GLOBAL DIRECTIVE IN USE:")
+                print(json.dumps(global_directive, indent=2, ensure_ascii=False))
 
-            agent_outputs = []
+                agent_outputs = []
 
-            for agent in agents:
-                topo_intersections = extract_intersections_from_topology(agent)
-                local_metrics = adapter.get_cluster_metrics(topo_intersections)
-                priority_score = compute_priority_score(local_metrics)
+                for agent in agents:
+                    topo_intersections = extract_intersections_from_topology(agent)
+                    local_metrics = adapter.get_cluster_metrics(topo_intersections)
+                    priority_score = compute_priority_score(local_metrics)
 
-                enriched_metrics = {
-                    "zone": getattr(agent, "zone", "unknown"),
-                    "priority_score": priority_score,
-                    "intersections": local_metrics["intersections"]
-                }
+                    enriched_metrics = {
+                        "zone": getattr(agent, "zone", "unknown"),
+                        "priority_score": priority_score,
+                        "intersections": local_metrics["intersections"]
+                    }
 
-                # Gli agenti usano la direttiva globale del ciclo precedente
-                decision = agent.decide(enriched_metrics, global_directive=global_directive)
+                    # Gli agenti usano la direttiva globale del ciclo precedente
+                    decision = agent.decide(enriched_metrics, global_directive=global_directive)
 
-                actions = decision if decision else []
-                if isinstance(actions, dict):
-                    actions = [actions]
+                    actions = decision if decision else []
+                    if isinstance(actions, dict):
+                        actions = [actions]
 
-                agent_outputs.append({
-                    "agent_id": agent.id,
-                    "zone": getattr(agent, "zone", "unknown"),
-                    "priority_score": priority_score,
-                    "actions": actions
-                })
+                    agent_outputs.append({
+                        "agent_id": agent.id,
+                        "zone": getattr(agent, "zone", "unknown"),
+                        "priority_score": priority_score,
+                        "actions": actions
+                    })
 
-            print("\n📡 OUTPUT AGENTI:")
-            print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
+                print("\n📡 OUTPUT AGENTI:")
+                print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
 
-            # L'orchestratore legge gli output correnti e produce la direttiva per il ciclo successivo
-            global_decision = orchestrator.decide(agent_outputs)
+                # L'orchestratore legge gli output correnti e produce la direttiva per il ciclo successivo
+                global_decision = orchestrator.decide(agent_outputs)
 
-            print("\n🧭 DECISIONE GLOBALE:")
-            print(json.dumps(global_decision, indent=2, ensure_ascii=False))
+                print("\n🧭 DECISIONE GLOBALE:")
+                print(json.dumps(global_decision, indent=2, ensure_ascii=False))
 
-            global_directive = global_decision
+                global_directive = global_decision
+            
+            step += 1
 
-    except KeyboardInterrupt:
-        print("🛑 Simulazione interrotta.")
+    except traci.exceptions.FatalTraCIError:
+        print("Simulazione interrotta.")
     finally:
         adapter.close()
-        print("✅ Simulazione terminata.")
+        print("🛑 Simulazione terminata.")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sumo_cfg", required=True, help="Percorso file .sumocfg")
+    parser.add_argument("--sumo_bin", default="sumo-gui", help="Eseguibile SUMO")
+    parser.add_argument("--agents_dir", required=True)
+    parser.add_argument("--provider", choices=["local", "cloud"], default="cloud", help="Scegli se usare LM Studio (local) o Gemini (cloud)")
+    parser.add_argument("--model", default="gemini-2.5-pro", choices=["gemini-2.5-pro", "vertex_ai/mistral-small-2503"], help="Nome del modello cloud")
+    parser.add_argument("--decision_interval", type=int, default=60)
+    args = parser.parse_args()
+
+    run_simulation(args.agents_dir, args.sumo_cfg, args.sumo_bin, args.decision_interval, args.provider, args.model)
