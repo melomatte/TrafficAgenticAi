@@ -58,16 +58,21 @@ class TrafficAgent:
         self.static_prompt = f"{topology_section}\n\n{OPTIMIZATION_RULES}\n\n{RESPONSE_RULES}"
 
     def _format_metrics_to_text(self, metrics):
-    
-        lines = ["--- LIVE TRAFFIC METRICS ---"]
+        stress = metrics.get("stress_index", 0)
+        
+        # Traduzione qualitativa dello stress per l'LLM
+        if stress < 20: status = "FLUIDO"
+        elif stress < 50: status = "MODERATO"
+        elif stress < 80: status = "CRITICO"
+        else: status = "EMERGENZA"
+
+        lines = [f"--- ZONE STATUS: {status} (Stress Index: {stress}/100) ---"]
         for inter in metrics.get("intersections", []):
-            lanes_info = []
-            for l_id, l_data in inter.get("lanes_status", {}).items():
-                lanes_info.append(f"{l_id}(Q:{l_data['queue']}, M:{l_data['moving']})")
+            lanes_info = [f"{l_id}(Q:{d['queue']}, M:{d['moving']})" 
+                         for l_id, d in inter.get("lanes_status", {}).items()]
             
-            line = (f"- Incrocio: {inter['id']} | Tot_Veicoli:{inter['total_vehicles']}, "
-                    f"Tot_Coda:{inter['total_queue']} | Dettaglio Corsie: {', '.join(lanes_info)}")
-            lines.append(line)
+            lines.append(f"- Incrocio: {inter['id']} | Tot_Veicoli:{inter['total_vehicles']}, "
+                         f"Tot_Coda:{inter['total_queue']} | Dettaglio: {', '.join(lanes_info)}")
         return "\n".join(lines)
 
     def decide(self, current_metrics, global_directive=None):

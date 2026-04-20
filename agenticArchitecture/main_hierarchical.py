@@ -8,7 +8,7 @@ Entry point gerarchico:
 - aggiorna la direttiva globale per il ciclo successivo
 
 Comando per l'esecuzione:
-    python3 agenticArchitecture/main_hierarchical.py --sumo_cfg urbanNetworks/2cross/sim.sumocfg --sumo_bin /usr/bin/sumo --agents_dir urbanNetworks/2cross/data/agent_topologies/
+    python3 agenticArchitecture/main_hierarchical.py --sumo_cfg urbanNetworks/2cross/sim.sumocfg --agents_dir urbanNetworks/2cross/data/agent_topologies/
 """
 
 import argparse
@@ -19,6 +19,7 @@ import traci
 from agenticArchitecture.agent.agent_core import TrafficAgent
 from agenticArchitecture.orchestrator.orchestrator_core import GlobalOrchestrator
 from agenticArchitecture.simulation.sumo_adapter import SumoAdapter
+from simulation.metrics import get_enriched_agent_metrics
 
 
 def load_agents_from_dir(agents_dir, provider, model):
@@ -41,29 +42,6 @@ def load_agents_from_dir(agents_dir, provider, model):
         agents.append(agent)
 
     return agents
-
-
-def compute_priority_score(local_metrics):
-    total_queue = 0
-    total_vehicles = 0
-
-    for inter in local_metrics.get("intersections", []):
-        total_queue += inter.get("total_queue", 0)
-        total_vehicles += inter.get("total_vehicles", 0)
-
-    return round(total_queue * 2 + total_vehicles * 0.5, 2)
-
-
-def extract_intersections_from_topology(agent):
-    topo_intersections = []
-
-    for line in agent.topo.get("graph", []):
-        if ":" in line:
-            inter_id = line.split(":")[0].strip()
-            topo_intersections.append(inter_id)
-
-    return topo_intersections
-
 
 def run_simulation(agents_dir, sumo_cfg, sumo_bin, decision_interval, provider, model):
     
@@ -102,30 +80,26 @@ def run_simulation(agents_dir, sumo_cfg, sumo_bin, decision_interval, provider, 
                 print("\n🧭 GLOBAL DIRECTIVE IN USE:")
                 print(json.dumps(global_directive, indent=2, ensure_ascii=False))
 
+                # Invocazione degli agent per decisioni sulla zona di competenza
                 agent_outputs = []
 
                 for agent in agents:
-                    topo_intersections = extract_intersections_from_topology(agent)
-                    local_metrics = adapter.get_cluster_metrics(topo_intersections)
-                    priority_score = compute_priority_score(local_metrics)
+                    # Passiamo l'agente intero alla funzione delle metriche
+                    enriched_metrics = get_enriched_agent_metrics(agent, adapter)
 
-                    enriched_metrics = {
-                        "zone": getattr(agent, "zone", "unknown"),
-                        "priority_score": priority_score,
-                        "intersections": local_metrics["intersections"]
-                    }
-
-                    # Gli agenti usano la direttiva globale del ciclo precedente
+                    # L'agente decide basandosi sulle metriche arricchite e sulla direttiva globale
                     decision = agent.decide(enriched_metrics, global_directive=global_directive)
-
+                    
                     actions = decision if decision else []
                     if isinstance(actions, dict):
                         actions = [actions]
 
+                    # Aggiorniamo agent_outputs pescando i valori dal dizionario enriched_metrics
                     agent_outputs.append({
                         "agent_id": agent.id,
                         "zone": getattr(agent, "zone", "unknown"),
-                        "priority_score": priority_score,
+                        "priority_score": enriched_metrics.get("priority_score", 0), # Recuperato dal dict
+                        "stress_index": enriched_metrics.get("stress_index", 0),     # Aggiunto per l'orchestratore
                         "actions": actions
                     })
 

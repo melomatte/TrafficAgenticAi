@@ -7,7 +7,7 @@ import argparse
 import traci
 from agent import TrafficAgent
 from simulation.sumo_adapter import SumoAdapter
-from simulation.metrics import get_agent_metrics
+from simulation.metrics import get_enriched_agent_metrics
 
 def run_simulation(topology_path, sumo_cfg, sumo_bin, decision_interval, provider, model):
     
@@ -34,7 +34,7 @@ def run_simulation(topology_path, sumo_cfg, sumo_bin, decision_interval, provide
                 print(f"\n⏱️ [Step {step}] Analisi in corso...")
                 
                 # Estrazione dei dati dalla simulazione
-                current_metrics = get_agent_metrics(agent.topo, adapter)
+                current_metrics = get_enriched_agent_metrics(agent, adapter)
                 
                 # Prompting all'agent con le metriche raccolte e restituzione della risposta
                 agent.decide(current_metrics)
@@ -57,4 +57,4 @@ if __name__ == "__main__":
     parser.add_argument("--model", default="gemini-2.5-pro", choices=["gemini-2.5-pro", "vertex_ai/mistral-small-2503"], help="Nome del modello cloud")
     
     args = parser.parse_args()
-    run_simulation(args.topology, args.sumo_cfg, args.sumo_bin, args.interval, args.provider, args.model)
+    run_simulation(args.topology, args.sumo_cfg, args.sumo_bin, args.decision_interval, args.provider, args.model)

@@ -80,12 +80,12 @@ class SumoAdapter:
             "total_vehicles": total_vehicles,
             "lanes": lane_data,
         }
-
+"""
     def get_cluster_metrics(self, intersection_ids):
-        """
+        
         Raccoglie metriche aggregate per un gruppo di incroci.
         Restituisce un dict compatibile con TrafficAgent.decide().
-        """
+        
         data = {"intersections": []}
 
         for inter_id in intersection_ids:
@@ -118,3 +118,4 @@ class SumoAdapter:
             })
 
         return data
+"""
