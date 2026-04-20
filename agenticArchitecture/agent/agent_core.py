@@ -19,9 +19,8 @@ e la struttura logica del processo decisionale.
 """
 
 import json
-from .policies import TOPOLOGY, OPTIMIZATION_RULES, RESPONSE_RULES
-from .llm_connector import AgentBrain
-from agenticArchitecture.agent.policies import (
+from .agent_connector import AgentBrain
+from agenticArchitecture.agent.agent_policies import (
     TOPOLOGY,
     OPTIMIZATION_RULES,
     RESPONSE_RULES,

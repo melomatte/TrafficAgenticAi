@@ -14,7 +14,7 @@ import json
 import os
 
 from agenticArchitecture.agent.agent_core import TrafficAgent
-from agenticArchitecture.orchestrator.orchestrator import GlobalOrchestrator
+from agenticArchitecture.orchestrator.orchestrator_core import GlobalOrchestrator
 from agenticArchitecture.simulation.sumo_adapter import SumoAdapter
 
 

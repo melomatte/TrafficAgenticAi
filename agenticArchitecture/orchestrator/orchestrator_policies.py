@@ -3,7 +3,6 @@ Prompt base dell'orchestratore globale.
 La parte dinamica dipende dal numero di agenti caricati.
 """
 
-
 ORCHESTRATOR_ROLE = """
 You are the Global Traffic Orchestrator.
 Your task is to coordinate multiple local traffic agents and choose one global action.

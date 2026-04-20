@@ -1,0 +1,8 @@
+{
+  "id": "agent_1",
+  "in": [],
+  "out": [],
+  "graph": [
+    "center2: n2_c2>c2_c1(center1), n2_c2>c2_s2(EXT), n2_c2>c2_e2(EXT), n2_c2>c2_n2(EXT), e2_c2>c2_n2(EXT), e2_c2>c2_c1(center1), e2_c2>c2_s2(EXT), e2_c2>c2_e2(EXT), s2_c2>c2_e2(EXT), s2_c2>c2_n2(EXT), s2_c2>c2_c1(center1), s2_c2>c2_s2(EXT), c1_c2>c2_s2(EXT), c1_c2>c2_e2(EXT), c1_c2>c2_n2(EXT), c1_c2>c2_c1(center1)"
+  ]
+}
