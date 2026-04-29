@@ -1,0 +1,17 @@
+Architettura docker:
+- refactoring della cartella clusteringTopology -> non è più necessaria tutta la cartella, si può condensare tutto
+il codice in un unico script python "topology_builder.py" e posizionato nella root della cartella dell'architettura docker
+
+- creazione MCPServer per il backend
+- creazione container per il backend
+Dubbio che avevamo: per il backend creiamo due container o uno solo?
+
+Lavoro agent:
+- realizzare il worflow dell'orchestratore (da aggiungere quindi al sumo_listener -> punto d'ingresso della gerarchia 
+agent) -> quindi cartella orchestrator nel container agent
+- realizzare le chiamate MCP dell'orchestratore (nel container MCPServer per il backend -> in quanto orchestratore scrive
+i livelli di stress in memoria e recupera i livelli di stress recenti)
+- realizzare chiamate MCP degli agent per modificare temporizzazione semafori della simulazione -> all'interno del
+container MCPContainer
+
+GUI:

@@ -3,15 +3,14 @@
 
 # Ambienti virtuali
 .venv/
-sumo_clean/
+venv/
 
-results/
+# Risultati testing
+containerLogs/
 
 # Python cache
 __pycache__/
 *.pyc
-
-venv/
 
 # Chiavi API
 gemini_key.txt 
