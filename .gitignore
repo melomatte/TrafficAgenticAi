@@ -15,5 +15,4 @@ venv/
 
 # Chiavi API
 gemini_key.txt 
-
-requirements.txt
+api_key.txt
