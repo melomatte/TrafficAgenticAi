@@ -2,12 +2,8 @@ Architettura docker:
 - refactoring della cartella clusteringTopology -> non è più necessaria tutta la cartella, si può condensare tutto
 il codice in un unico script python "topology_builder.py" e posizionato nella root della cartella dell'architettura docker
 
-- creazione MCPServer per il backend --DONE
-- creazione container per il backend
-Dubbio che avevamo: per il backend creiamo due container o uno solo?
-
 Lavoro agent:
-- realizzare il worflow dell'orchestratore (da aggiungere quindi al sumo_listener -> punto d'ingresso della gerarchia 
+- realizzare il worflow dell'orchestratore (da aggiungere quindi al sumo_listener -> punto d'ingresso della gerarchia
 agent) -> quindi cartella orchestrator nel container agent
 - realizzare le chiamate MCP dell'orchestratore (nel container MCPServer per il backend -> in quanto orchestratore scrive
 i livelli di stress in memoria e recupera i livelli di stress recenti)
@@ -15,3 +11,43 @@ i livelli di stress in memoria e recupera i livelli di stress recenti)
 container MCPContainer
 
 GUI:
+
+TODO aggiornata:
+
+[ ] Refactor clusteringTopology → creare topology_builder.py unico
+[ ] Spostare topology_builder.py nella root architetturaDocker
+[ ] Pulizia finale Docker: .env, logs, nomi servizi, docker-compose
+[ ] Verificare networking tra container: mcp_server ↔ agentic_system ↔ sumo_simulation
+
+[ ] Integrare memoria storica su MCP, evitando history locale nel SumoListener
+[ ] Implementare tool MCP:
+    - save_stress_vector
+    - get_recent_stress_vectors
+
+[ ] Modificare SumoListener:
+    - costruire stress_vector compatto
+    - salvare stress_vector su MCP
+    - leggere history recente da MCP
+    - passare all’orchestratore current_vector completo + history compatta
+
+[ ] Pulire definitivamente:
+    - rimuovere history_window locale
+    - rimuovere append duplicati di agent_outputs
+    - mantenere uno storico omogeneo solo con indici di stress
+
+[ ] Aggiungere storage lato MCP:
+    - inizialmente in-memory
+    - opzionale futuro: Redis/Postgres
+
+[ ] Implementare tool orchestratore lato MCP per memoria stress
+[ ] Logging lato MCP opzionale
+
+[ ] Migliorare mapping policy → fase, ora hardcoded
+[ ] Validare tutte le chiamate MCP con gestione errori robusta
+[ ] Verificare stabilità TraCI + API SUMO
+[ ] Verificare che set_traffic_light venga sempre applicato realmente in SUMO
+
+[ ] GUI:
+    - decidere se usare sumo-gui con XQuartz
+    - oppure mantenere SUMO headless
+    - opzionale: dashboard per stress, direttive e fasi semaforiche
