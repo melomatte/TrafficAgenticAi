@@ -2,7 +2,7 @@ Architettura docker:
 - refactoring della cartella clusteringTopology -> non è più necessaria tutta la cartella, si può condensare tutto
 il codice in un unico script python "topology_builder.py" e posizionato nella root della cartella dell'architettura docker
 
-- creazione MCPServer per il backend
+- creazione MCPServer per il backend --DONE
 - creazione container per il backend
 Dubbio che avevamo: per il backend creiamo due container o uno solo?
 

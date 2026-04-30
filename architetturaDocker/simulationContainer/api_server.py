@@ -11,6 +11,10 @@ app = FastAPI()
 class TlsRequest(BaseModel):
     tls_ids: List[str]
 
+class TrafficLightCommand(BaseModel):
+    tl_id: str
+    phase_index: int
+
 @app.post("/compute_stress_index")
 def get_stress_index(request: TlsRequest):
     """Calcola lo Stress Index leggendo dalla memoria condivisa."""
@@ -44,6 +48,19 @@ def get_stress_index(request: TlsRequest):
 
     final_stress = round(total_stress / len(intersections), 2)
     return {"stress_index": final_stress}
+
+@app.post("/set_traffic_light")
+def set_traffic_light(command: TrafficLightCommand):
+    state.pending_commands.append({
+        "tls_id": command.tl_id,
+        "phase_index": command.phase_index
+    })
+
+    return {
+        "status": "queued",
+        "tl_id": command.tl_id,
+        "phase_index": command.phase_index
+    }
 
 def run_fastapi():
     """Avvia il server con gestione degli errori sulla porta."""

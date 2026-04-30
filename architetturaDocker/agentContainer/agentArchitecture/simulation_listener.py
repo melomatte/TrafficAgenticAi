@@ -1,22 +1,56 @@
 import os
 import glob
+import json
 import asyncio
+import shutil
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks
 from pydantic import BaseModel
 from typing import List
+
 from agent import TrafficAgent
 from orchestrator import Orchestrator
 
-# --- CONFIGURAZIONI ---
 TOPOLOGIES_DIR = os.getenv("TOPOLOGIES_DIR", "/app/agentArchitecture/agent_topologies")
 MODEL_NAME = os.getenv("MODEL_NAME")
 PROVIDER = os.getenv("PROVIDER")
+HISTORY_SIZE = int(os.getenv("HISTORY_SIZE", "5"))
 
-# Modello per il trigger ricevuto dal container sumo_simulation
+
+
+
+def reset_logs():
+    log_dir = "logs"
+
+    if os.path.exists(log_dir):
+        shutil.rmtree(log_dir)   # elimina TUTTO (anche sottocartelle)
+
+    os.makedirs(log_dir, exist_ok=True)  # ricrea vuota
+
+def policy_to_phase(policy: str) -> int:
+    return {
+        "PRIORITY_MAIN": 0,
+        "FAIR_BALANCE": 1,
+        "CLEAR_QUEUES": 2,
+    }.get(policy, 1)
+
+
+def get_directive_for_agent(global_directive, agent_id):
+    if not global_directive:
+        return None
+
+    for directive in global_directive.get("directives", []):
+        if directive.get("target_agent") == agent_id:
+            return directive
+
+    return None
+
+
 class SumoTrigger(BaseModel):
     step: int
     simulation_id: str
+
 
 class SumoListener:
 
@@ -25,24 +59,25 @@ class SumoListener:
         self.model_name = model_name
         self.agents_dir = agents_dir
         self.agents: List[TrafficAgent] = []
-        #self.global_orch = Orchestrator(model_name=model_name, provider=provider)
+        self.global_orch = Orchestrator(model_name=model_name, provider=provider)
+        self.global_directive = None
+
+        # finestra storica degli ultimi N vettori agenti
+        self.history_window = []
+        self.history_size = HISTORY_SIZE
 
     async def __aenter__(self):
-        print(f"[SUMO LISTENER] 🔌 Inizializzazione TrafficAgent con topologie presenti nella cartella {self.agents_dir}")
-        
-        # Estrapolazione file topologici
-        search_pattern = os.path.join(self.agents_dir, "*_topology.json")
-        topology_files = glob.glob(search_pattern)
+        print(f"[SUMO LISTENER] 🔌 Inizializzazione agenti da {self.agents_dir}")
+
+        topology_files = glob.glob(os.path.join(self.agents_dir, "*_topology.json"))
 
         if not topology_files:
-            print(f"⚠️ ATTENZIONE: Nessun file topologia trovato in {self.agents_dir}")
-        
-        # Per ogni file trovato viene inizializzato un TrafficAgent
+            print(f"⚠️ Nessun file topologia trovato in {self.agents_dir}")
+
         for filepath in topology_files:
-            # Estraiamo l'ID dell'agente dal nome del file (es: "agent_0" da "agent_0_topology.json")
             filename = os.path.basename(filepath)
             agent_id = filename.replace("_topology.json", "")
-            
+
             agent = TrafficAgent(
                 agent_id=agent_id,
                 topology_file=filepath,
@@ -51,80 +86,143 @@ class SumoListener:
             )
 
             self.agents.append(agent)
-            print(f"   🤖 Agente [{agent_id}] inizializzato con successo.")
-        
-        # Avviamo le connessioni SSE per MCP in parallelo
-        print(f"[SUMO LISTENER] 🌐 Avvio connessioni SSE degli agent in parallelo")
-        connect_tasks = [agent.__aenter__() for agent in self.agents]
-        await asyncio.gather(*connect_tasks)
-        print(f"[SUMO LISTENER] ✅ Tutte le connessioni SSE aperte correttamente")
-        
-        # Da aggiungere aperta connessione SSE per MCP dell'orchestratore
+            print(f"   🤖 Agente [{agent_id}] inizializzato.")
+
+        print("[SUMO LISTENER] 🌐 Apertura connessioni MCP agenti")
+        await asyncio.gather(*[agent.__aenter__() for agent in self.agents])
 
         print(f"[SUMO LISTENER] ✅ Sistema pronto. {len(self.agents)} agenti attivi.")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        print("[SUMO LISTENER] 🔌 Chiusura connessioni MCP (in parallelo) in corso")
-        disconnect_tasks = [agent.__aexit__(exc_type, exc_val, exc_tb) for agent in self.agents]
-        await asyncio.gather(*disconnect_tasks)
-        # Da aggiungere orchestratore
+        print("[SUMO LISTENER] 🔌 Chiusura connessioni MCP")
+
+        await asyncio.gather(*[
+            agent.__aexit__(exc_type, exc_val, exc_tb)
+            for agent in self.agents
+        ])
+
         print("[SUMO LISTENER] 🛑 Spegnimento completato.")
 
     async def workflow(self, step: int):
-        """
-        Workflow asincrono: fa decidere tutti gli agenti in PARALLELO.
-        """
-        print(f"\n[SUMO LISTENER] ⏱️ Inizio elaborazione Step {step} per {len(self.agents)} agenti")
-        
+        print(f"\n[SUMO LISTENER] ⏱️ Step {step} - avvio workflow")
+
         if not self.agents:
-            print("[SUMO LISTENER] ⚠️ Nessun agente configurato per agire.")
+            print("[SUMO LISTENER] ⚠️ Nessun agente configurato.")
             return
 
-        # Prepariamo la lista dei task asincroni (ovvero loop agentico) per mandarli in esecuzione contemporaneamente
-        # return_exceptions=True evita che se un agente va in errore, si blocchino anche gli altri
-        tasks = []
-        for agent in self.agents:
-            tasks.append(agent.decide(step=step))
+        tasks = [
+            agent.decide(
+                step=step,
+                global_directive=get_directive_for_agent(self.global_directive, agent.id)
+            )
+            for agent in self.agents
+        ]
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # Controllo degli esiti
+        agent_outputs = []
+
         for agent, result in zip(self.agents, results):
             if isinstance(result, Exception):
-                print(f"   ❌ Errore critico in {agent.id}: {result}")
-            else:
-                print(f"   ✅ {agent.id} ha completato il suo turno.")
-            
-        # Da aggiungere logica orchestratore
+                print(f"   ❌ Errore in {agent.id}: {result}")
+                continue
 
-        print(f"[SUMO LISTENER] 🏁 Elaborazione Step {step} terminata.")
+            print(f"   ✅ {agent.id} completato.")
 
-# --- Lifespan: gestisce startup e shutdown dell'intera applicazione ---
+            actions = result.get("actions", [])
+
+            agent_outputs.append({
+                "agent_id": agent.id,
+                "zone": agent.id,
+                "stress_index": result.get("stress_index", 0),
+                "priority_score": result.get("priority_score", 0),
+                "prompt_text": result.get("prompt_text", ""),
+                "actions": actions
+            })
+
+            for action in actions:
+                tl_id = action.get("intersection_id")
+                policy = action.get("policy")
+
+                if not tl_id or not policy:
+                    continue
+
+                phase_index = policy_to_phase(policy)
+
+                mcp_result = await agent._mcp_client.call_tool(
+                    "set_traffic_light",
+                    {
+                        "tl_id": tl_id,
+                        "phase_index": phase_index
+                    }
+                )
+
+                print(f"🚦 {tl_id} → {policy} → fase {phase_index} | MCP: {mcp_result}")
+
+
+        if not agent_outputs:
+            print("[SUMO LISTENER] ⚠️ Nessun output valido dagli agenti.")
+            return
+
+        print("\n📡 VETTORE CORRENTE AGENTI:")
+        print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
+
+        stress_vector = {
+            out["agent_id"]: out["stress_index"]
+            for out in agent_outputs
+        }
+
+        history_context = self.history_window[-self.history_size:]
+
+        maybe_decision = self.global_orch.decide(
+            current_vector=agent_outputs,  # JSON completo attuale
+            history_vectors=history_context  # storico compatto
+        )
+
+        self.history_window.append(stress_vector)
+        self.history_window = self.history_window[-self.history_size:]
+
+
+        if asyncio.iscoroutine(maybe_decision):
+            global_decision = await maybe_decision
+        else:
+            global_decision = maybe_decision
+
+        print("\n🧭 DIRETTIVE GLOBALI:")
+        print(json.dumps(global_decision, indent=2, ensure_ascii=False))
+
+        self.global_directive = global_decision
+
+        print(f"[SUMO LISTENER] 🏁 Step {step} terminato.")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Inizializziamo l'orchestratore usando le variabili d'ambiente
-    async with SumoListener(agents_dir=TOPOLOGIES_DIR, model_name=MODEL_NAME, provider=PROVIDER) as orch:
-        print("[SUMO LISTENER] 🚀 Server pronto a ricevere eventi.")
+    reset_logs()
+
+    async with SumoListener(
+        agents_dir=TOPOLOGIES_DIR,
+        model_name=MODEL_NAME,
+        provider=PROVIDER
+    ) as orch:
+        print("[SUMO LISTENER] 🚀 Server pronto.")
         app.state.orch = orch
         yield
 
 app = FastAPI(lifespan=lifespan)
 
+
 @app.post("/trigger_step")
 async def trigger_step(event: SumoTrigger, background_tasks: BackgroundTasks):
-    """
-    Riceve il trigger da SUMO, avvia il workflow in background e risponde subito -> comportamento per non bloccare simulazione
-    """
-    # Aggiunge il workflow alla coda asincrona di FastAPI
     background_tasks.add_task(app.state.orch.workflow, event.step)
-    
+
     return {
-        "status": "acknowledged", 
+        "status": "acknowledged",
         "message": f"Workflow for step {event.step} started in background"
     }
 
-# Permette di lanciare lo script direttamente per fare test fuori da Docker
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

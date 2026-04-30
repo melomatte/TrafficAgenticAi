@@ -20,15 +20,21 @@ def build_orchestrator_response_rules(agent_ids):
     agents_str = ", ".join(agent_ids)
 
     return f"""
-Reply ONLY with valid JSON. No markdown or extra text.
-
-Available agents:
-{agents_str}
+Reply ONLY with valid JSON.
 
 Exact format:
-{{"action":"prioritize_agent|balance_agents|hold_current","target_agent":null,"reasoning":"max 12 words"}}
+{
+  "global_reasoning": "short reasoning",
+  "directives": [
+    {
+      "target_agent": "agent id",
+      "action": "prioritize_flow|hold_or_balance|reduce_aggressiveness",
+      "instruction": "short instruction"
+    }
+  ]
+}
 
 Constraints:
-- If action is "prioritize_agent", target_agent must be one of: {agents_str}
-- If action is "balance_agents" or "hold_current", target_agent must be null
+- Return exactly one directive for each available agent.
+- target_agent must match one of the available agent IDs.
 """

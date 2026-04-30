@@ -91,6 +91,12 @@ class AgentConnector:
                 print(f"✅ [{self.agent_name}][CONNECTOR] Connettore inizializzato su OpenRouter (Modello: {self.model})")
 
     def _load_key_logic(self, filename) -> tuple[str, str]:
+        env_key = os.getenv("LLM_API_KEY")
+        env_sdk = os.getenv("LLM_SDK", "").strip().lower()
+
+        if env_key and env_sdk in VALID_SDKS:
+            print(f"✅ [{self.agent_name}][CONNECTOR] Configurazione caricata da variabili d'ambiente (sdk={env_sdk})")
+            return env_key, env_sdk
         """
         Legge il file di configurazione della chiave API.
         

@@ -36,7 +36,7 @@ def run_simulation(simulation_name, decision_interval):
     # 2. Avvio SUMO
     sim_path = os.path.join(BASE_DIR, simulation_name)
     sumocfg_file = find_sumocfg(sim_path)
-    sumo_cmd = ["sumo-gui", "-c", sumocfg_file, "--step-length", "1", "--start"]
+    sumo_cmd = ["sumo", "-c", sumocfg_file, "--step-length", "1", "--start"]
     
     print(f"🚗 [SUMO] Avvio simulazione: {simulation_name}", flush=True)
     traci.start(sumo_cmd)
@@ -71,13 +71,13 @@ def run_simulation(simulation_name, decision_interval):
             }
 
         # ESECUZIONE COMANDI MCP (Letti dalla memoria condivisa)
-        """while state.pending_commands:
+        while state.pending_commands:
             cmd = state.pending_commands.pop(0)
             try:
                 traci.trafficlight.setPhase(cmd["tls_id"], cmd["phase_index"])
                 print(f"🚦 [SUMO] Fase cambiata: {cmd['tls_id']} -> {cmd['phase_index']}", flush=True)
             except Exception as e:
-                print(f"⚠️ [SUMO] Errore comando: {e}", flush=True)"""
+                print(f"⚠️ [SUMO] Errore comando: {e}", flush=True)
 
         # 5. TRIGGER AGENTI
         if step % decision_interval == 0 and step > 0:

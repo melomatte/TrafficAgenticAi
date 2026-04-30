@@ -1,14 +1,14 @@
 services:
-  # 1. Il Server MCP (parte per primo)
+  # 1. Il Server MCP
   mcp_server:
     build: ./MCPContainer
     container_name: mcp_server
     networks:
-      - agentic_net           
+      - agentic_net
     ports:
       - "8080:8080"
 
-  # 2. La Gerarchia Agenti (dipende dall'MCP)
+  # 2. La Gerarchia Agenti
   agentic_system:
     build: ./agentContainer
     container_name: agentic_system
@@ -17,26 +17,31 @@ services:
     environment:
       - MODEL_NAME=${MODEL_NAME}
       - PROVIDER=${PROVIDER}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_SDK=${LLM_SDK}
     ports:
       - "8000:8000"
     depends_on:
       - mcp_server
+    volumes:
+      - ./logs:/app/logs
 
-  # 3. Il Motore SUMO (dipende da entrambi per non inviare trigger a vuoto)
+  # 3. Il Motore SUMO
   sumo_simulation:
     build: ./simulationContainer
     container_name: sumo_simulation
     networks:
       - agentic_net
-    # Configurazione X11 per vedere la GUI sul tuo monitor
     environment:
       - DISPLAY=${DISPLAY}
       - LIBGL_ALWAYS_SOFTWARE=1
+      - AGENT_URL=http://agentic_system:8000/trigger_step
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     depends_on:
       - mcp_server
       - agentic_system
+    command: ["python3", "simulationManager.py", "--simulation_name", "2cross", "--decision_interval", "60"]
 
 networks:
   agentic_net:
