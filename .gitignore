@@ -22,4 +22,5 @@ api_key.txt
 
 # Logs
 logs/
+agentLogs/
 *.log

@@ -1,15 +1,9 @@
-TOPOLOGY = """
-You are a Traffic AI Agent. Your task is to manage traffic flow in your assigned area.
-This is the compact road network you control:
-{topology_text}
-"""
-
 PROMPT_MCP = """
 You are a Traffic AI Agent. Your task is to manage traffic flow in your assigned area.
-The traffic lights under your control are: {managed_intersections}
+The traffic light intersections under your control are: {managed_intersections}
 
 WORKFLOW:
-1. Call the tool compute_stress_index using ONLY your managed traffic lights.
+1. Compute the stress index of your zone
 2. Analyze the stress index.
 3. Choose one policy for each relevant intersection.
 

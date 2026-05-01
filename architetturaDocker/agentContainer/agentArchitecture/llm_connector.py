@@ -49,9 +49,6 @@ import os
 from openai import AsyncOpenAI
 from adapter_connector import OpenAIChatWrapper
 
-# File contenente chiave e sdk
-KEY_FILE = "api_key.txt"
-
 # SDK validi accettati nel file di configurazione
 VALID_SDKS = {"openai", "openrouter", "litellm"}
 
@@ -72,8 +69,17 @@ class AgentConnector:
 
         else: # Modalità cloud: legge chiave e sdk dal file di configurazione
             
-            # Lettura file api key e interfaccia da utilizzare
-            api_key, self.sdk = self._load_key_logic(KEY_FILE)
+            # Recupero chiave api e nome modello da variabili d'ambiente
+            api_key = os.getenv("LLM_API_KEY")
+            self.sdk = os.getenv("LLM_SDK", "").strip().lower()
+
+            if api_key and self.sdk in VALID_SDKS:
+                print(f"✅ [{self.agent_name}][CONNECTOR] Configurazione caricata da variabili d'ambiente (sdk={self.sdk})")
+            else:
+                raise ValueError(
+                    f"❌ [{self.agent_name}][CONNECTOR] Impossibile caricare la configurazione API.\n"
+                    f" crea il file .env (nella root del progetto, di fianco al manager) impostando:\nLLM_API_KEY=<CHIAVE>\nLLM_SDK=litellm\n"
+                )
 
             if self.sdk == "openai":
                 self.client = AsyncOpenAI(api_key=api_key, base_url="https://api.openai.com/v1")
@@ -89,70 +95,7 @@ class AgentConnector:
                 self.client = AsyncOpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
                 self.model = model_name
                 print(f"✅ [{self.agent_name}][CONNECTOR] Connettore inizializzato su OpenRouter (Modello: {self.model})")
-
-    def _load_key_logic(self, filename) -> tuple[str, str]:
-        env_key = os.getenv("LLM_API_KEY")
-        env_sdk = os.getenv("LLM_SDK", "").strip().lower()
-
-        if env_key and env_sdk in VALID_SDKS:
-            print(f"✅ [{self.agent_name}][CONNECTOR] Configurazione caricata da variabili d'ambiente (sdk={env_sdk})")
-            return env_key, env_sdk
-        """
-        Legge il file di configurazione della chiave API.
         
-        Ordine di ricerca: 
-            1. root del progetto
-            2. cartella dello script
-            3. variabili d'ambiente -> Le variabili d'ambiente attese sono LLM_API_KEY e LLM_SDK.
-        """
-        path_root = os.path.abspath(filename)
-        path_agent = os.path.abspath(os.path.join(os.path.dirname(__file__), filename))
-
-        for path in [path_root, path_agent]:
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    lines = [l.strip() for l in f.readlines() if l.strip()]
-
-                if len(lines) < 2:
-                    raise ValueError(
-                        f"❌ [{self.agent_name}][CONNECTOR] Il file '{path}' deve contenere due righe:\n"
-                        "  Riga 1: <api_key>\n"
-                        "  Riga 2: sdk=<google|openai|openrouter>"
-                    )
-
-                api_key = lines[0]
-                sdk_line = lines[1]
-
-                if not sdk_line.startswith("sdk="):
-                    raise ValueError(
-                        f"❌ [{self.agent_name}][CONNECTOR] Riga 2 del file '{path}' non valida: '{sdk_line}'.\n"
-                        "  Formato atteso: sdk=<google|openai|openrouter>"
-                    )
-
-                sdk = sdk_line.split("=", 1)[1].strip().lower()
-
-                if sdk not in VALID_SDKS:
-                    raise ValueError(
-                        f"❌ [{self.agent_name}][CONNECTOR] SDK '{sdk}' non riconosciuto. Valori accettati: {VALID_SDKS}"
-                    )
-
-                print(f"✅ [{self.agent_name}][CONNECTOR] Configurazione caricata da: {path} (sdk={sdk})")
-                return api_key, sdk
-
-        # Fallback: variabili d'ambiente
-        env_key = os.getenv("LLM_API_KEY")
-        env_sdk = os.getenv("LLM_SDK", "").strip().lower()
-
-        if env_key and env_sdk in VALID_SDKS:
-            print(f"✅ [{self.agent_name}][CONNECTOR] Configurazione caricata da variabili d'ambiente (sdk={env_sdk})")
-            return env_key, env_sdk
-
-        raise ValueError(
-            f"❌ [{self.agent_name}][CONNECTOR] Impossibile caricare la configurazione API.\n"
-            f"  Opzione 1: crea il file '{filename}' con chiave e sdk=<google|openai|openrouter>.\n"
-            "  Opzione 2: imposta le variabili d'ambiente LLM_API_KEY e LLM_SDK."
-        )
-
     async def think(self, full_prompt) -> str:
 
         try:

@@ -18,8 +18,6 @@ PROVIDER = os.getenv("PROVIDER")
 HISTORY_SIZE = int(os.getenv("HISTORY_SIZE", "5"))
 
 
-
-
 def reset_logs():
     log_dir = "logs"
 

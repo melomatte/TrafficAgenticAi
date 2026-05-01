@@ -28,7 +28,7 @@ def initialize_static_data():
             if l_id not in state.static_lane_lengths:
                 state.static_lane_lengths[l_id] = traci.lane.getLength(l_id)
 
-def run_simulation(simulation_name, decision_interval):
+def run_simulation(simulation_name, decision_interval, gui):
     # 1. Avvio API Server nel thread separato
     api_thread = threading.Thread(target=run_fastapi, daemon=True)
     api_thread.start()
@@ -36,8 +36,11 @@ def run_simulation(simulation_name, decision_interval):
     # 2. Avvio SUMO
     sim_path = os.path.join(BASE_DIR, simulation_name)
     sumocfg_file = find_sumocfg(sim_path)
-    sumo_cmd = ["sumo", "-c", sumocfg_file, "--step-length", "1", "--start"]
-    
+    if gui == "true":
+        sumo_cmd = ["sumo-gui", "-c", sumocfg_file, "--step-length", "1", "--start"]
+    else: 
+        sumo_cmd = ["sumo", "-c", sumocfg_file, "--step-length", "1", "--start"]
+
     print(f"🚗 [SUMO] Avvio simulazione: {simulation_name}", flush=True)
     traci.start(sumo_cmd)
     initialize_static_data()
@@ -97,7 +100,8 @@ def run_simulation(simulation_name, decision_interval):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--simulation_name", required=True)
-    parser.add_argument("--decision_interval", type=int, default=60)
+    parser.add_argument("--decision_interval", required=True, type=int, default=60)
+    parser.add_argument("--gui", required=True)
     args = parser.parse_args()
 
-    run_simulation(args.simulation_name, args.decision_interval)
+    run_simulation(args.simulation_name, args.decision_interval, args.gui)

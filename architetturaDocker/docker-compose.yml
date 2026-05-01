@@ -24,7 +24,7 @@ services:
     depends_on:
       - mcp_server
     volumes:
-      - ./logs:/app/logs
+      - ./agentLogs:/app/logs
 
   # 3. Il Motore SUMO
   sumo_simulation:
@@ -36,12 +36,12 @@ services:
       - DISPLAY=${DISPLAY}
       - LIBGL_ALWAYS_SOFTWARE=1
       - AGENT_URL=http://agentic_system:8000/trigger_step
+      - SUMO_HOME=/usr/share/sumo
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     depends_on:
       - mcp_server
       - agentic_system
-    command: ["python3", "simulationManager.py", "--simulation_name", "2cross", "--decision_interval", "60"]
 
 networks:
   agentic_net:

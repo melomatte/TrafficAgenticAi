@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 import platform
 import subprocess
@@ -6,6 +7,7 @@ import signal
 import sys
 import threading
 import time
+from dotenv import load_dotenv  
 from clusteringTopology.topology_builder import build_topologies
 
 # ---------------------------------------------------------------------------
@@ -13,6 +15,18 @@ from clusteringTopology.topology_builder import build_topologies
 # ---------------------------------------------------------------------------
 LOG_DIR = "containerLogs"
 os.makedirs(LOG_DIR, exist_ok=True)
+
+AGENT_LOG_DIR = "agentLogs"
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+
+# Pulizia automatica delle vecchie simulazioni
+print(f"🧹 Pulizia vecchi log degli agenti in '{AGENT_LOG_DIR}'...")
+for filepath in glob.glob(os.path.join(AGENT_LOG_DIR, "*")):
+    try:
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+    except Exception as e:
+        print(f"⚠️ Impossibile rimuovere il vecchio log {filepath}: {e}")
 
 PLATFORM = platform.system()   # "Linux" | "Darwin" | "Windows"
 
@@ -94,8 +108,9 @@ def setup_gui() -> bool:
         if ret != 0:
             print("⚠️  xhost non disponibile: la finestra SUMO potrebbe non aprirsi.")
             return False
-        print("   ✔ xhost configurato (macOS/XQuartz).")
-        return True
+        else:
+            print("   ✔ xhost configurato (macOS/XQuartz).")
+            return True
 
     elif PLATFORM == "Windows":
         print("   Windows rilevato.")
@@ -166,7 +181,7 @@ def smart_compose_up(docker_env: dict) -> None:
     # --build         : ricostruisce solo le immagini con contesto modificato
     # --remove-orphans: rimuove container di servizi rimossi dal compose
     # NO --force-recreate: evita ricreazioni inutili
-    cmd = ["docker", "compose", "up", "--build", "--remove-orphans", "-d"]
+    cmd = ["docker", "compose", "up", "--build", "--remove-orphans", "--force-recreate", "-d"]
     try:
         subprocess.run(cmd, env=docker_env, check=True)
     except subprocess.CalledProcessError:
@@ -216,8 +231,8 @@ if PLATFORM != "Windows":
 # Entry point principale
 # ---------------------------------------------------------------------------
 
-def run_application(simulation_name,decision_interval,k,outdir,provider,model_name,no_gui):
-
+def run_application(simulation_name,decision_interval,k,outdir,gui):
+    
     # 0. Prerequisiti
     check_docker()
 
@@ -235,16 +250,22 @@ def run_application(simulation_name,decision_interval,k,outdir,provider,model_na
 
     # 2. GUI X11 -> per visione simulazione nonostante stia girando in ambiente containerizzato
     _header(2, "Configurazione GUI")
-    if no_gui:
-        print("   Modalità headless: skip configurazione X11.")
-    else:
+    if gui == "true":
         setup_gui()
+    else:
+        print("   Modalità headless: skip configurazione X11.")
 
     # 3. Creazione infrastruttura Docker
+    """ 
+    Per la corretta creazione dell'infrastruttura è necessario creare un file .env (nella root del progetto) con struttura:
+        LLM_API_KEY=<CHIAVE>
+        LLM_SDK=litellm
+        MODEL_NAME=[gemini-2.5-pro,vertex_ai/mistral-small-2503] 
+        PROVIDER=[cloud, local]
+    """
     _header(3, "Avvio infrastruttura Docker")
+    load_dotenv()            
     docker_env = os.environ.copy()
-    docker_env["MODEL_NAME"] = model_name
-    docker_env["PROVIDER"]   = provider
     smart_compose_up(docker_env)
     print("✅ Infrastruttura pronta.")
 
@@ -267,7 +288,7 @@ def run_application(simulation_name,decision_interval,k,outdir,provider,model_na
 
     # 6. Avvio simulazione SUMO -> stampa direttamente a riga di comando
     _header(6, "Avvio Simulazione SUMO")
-    if not no_gui:
+    if gui == "true":
         print("   (La finestra di SUMO si aprirà a breve)")
     print("👉 Premi Ctrl+C per spegnere l'intera infrastruttura.")
     print("_"*50+"\n")
@@ -277,10 +298,11 @@ def run_application(simulation_name,decision_interval,k,outdir,provider,model_na
         "python3", "simulationManager.py",
         "--simulation_name",   str(simulation_name),
         "--decision_interval", str(decision_interval),
+        "--gui", str(gui),
     ])
     if result.returncode != 0:
         _fatal(
-            "Impossibile avviare run_sim.py nel container 'sumo_simulation'.",
+            "Impossibile avviare simulationManager.py nel container 'sumo_simulation'.",
             "Verifica che il container sia in esecuzione con: docker ps",
         )
 
@@ -293,9 +315,7 @@ if __name__ == "__main__":
     parser.add_argument("--decision_interval", type=int, default=60, help="Step SUMO tra un trigger IA e il successivo")
     parser.add_argument("--k", type=int,help="Numero di cluster/agenti desiderato")
     parser.add_argument("--outdir", default="agentContainer/agentArchitecture/agent_topologies", help="Directory di output delle topologie (dentro il container agent)")
-    parser.add_argument("--provider", choices=["local", "cloud"], default="cloud", help="Backend LLM: 'local' (LM Studio) o 'cloud' (Gemini)")
-    parser.add_argument("--model_name", choices=["gemini-2.5-pro", "vertex_ai/mistral-small-2503"], default="gemini-2.5-pro", help="Modello cloud da usare")
-    parser.add_argument("--no-gui", action="store_true", help="Avvia SUMO in modalità headless (senza finestra grafica)")
+    parser.add_argument("--gui", default="false", choices=["true", "false"], help="Avvia SUMO con o senza l'interfaccia grafica")
 
     args = parser.parse_args()
 
@@ -304,7 +324,5 @@ if __name__ == "__main__":
         decision_interval=args.decision_interval,
         k=args.k,
         outdir=args.outdir,
-        provider=args.provider,
-        model_name=args.model_name,
-        no_gui=args.no_gui,
+        gui=args.gui,
     )
