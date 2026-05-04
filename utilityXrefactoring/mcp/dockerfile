@@ -1,8 +1,0 @@
-FROM python:3.12.13-slim-trixie
-
-RUN pip install --no-cache-dir fastmcp traci
-
-WORKDIR /app
-COPY mcp_server.py sim_manager.py traci_tools.py ./
-
-CMD ["python3", "mcp_server.py"]
