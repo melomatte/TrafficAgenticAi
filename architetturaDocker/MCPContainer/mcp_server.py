@@ -70,16 +70,14 @@ async def set_traffic_light(tl_id: str, phase_index: int) -> dict:
 async def save_agent_stress(
     agent_id: str,
     stress_index: float,
-    priority_score: float,
     prompt_text: str
-) -> dict:
+) -> bool:
     """
     Salva lo stato di stress prodotto da un agente.
     """
     item = {
         "agent_id": agent_id,
         "stress_index": stress_index,
-        "priority_score": priority_score,
         "prompt_text": prompt_text,
         "timestamp": time.time()
     }
@@ -89,14 +87,11 @@ async def save_agent_stress(
     # Mantiene solo gli ultimi 100 record
     del stress_memory[:-100]
 
-    return {
-        "status": "ok",
-        "saved": item
-    }
+    return True
 
 
 @mcp.tool()
-async def get_recent_stress(limit: int = 10) -> list[dict]:
+async def get_recent_stress(limit: int) -> list[dict]:
     """
     Restituisce gli ultimi stati di stress salvati.
     """

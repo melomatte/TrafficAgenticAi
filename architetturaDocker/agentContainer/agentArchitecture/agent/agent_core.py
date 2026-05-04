@@ -24,7 +24,6 @@ class TrafficAgent:
         self.managed_intersections = self._extract_intersections()
         self.connector = AgentConnector(agent_name=self.id, provider=provider, model_name=model_name)
         self.mcp_url = mcp_url
-        self.prompt = PROMPT_MCP.format(managed_intersections=self.managed_intersections)
         self.openai_tools = self._define_tools()
         # Client MCP inizializzato in __aenter__, None finché l'agente non è attivo
         self._mcp_client: Client | None = None
@@ -68,6 +67,27 @@ class TrafficAgent:
                         "required": ["tls_ids"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "set_traffic_light",
+                    "description": "Changes the physical phase of a specific traffic light intersection to apply a new policy.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "tl_id": {
+                                "type": "string",
+                                "description": "The ID of the traffic light intersection to change."
+                            },
+                            "phase_index": {
+                                "type": "integer",
+                                "description": "The phase index to apply."
+                            }
+                        },
+                        "required": ["tl_id", "phase_index"]
+                    }
+                }
             }
         ]
         return openai_tools
@@ -85,7 +105,7 @@ class TrafficAgent:
    
             f.write("PROMPT TO LLM :\n\n")
             f.write(prompt)
-            f.write("-" * 80 + "\n")
+            f.write("\n"+ "-" * 80 + "\n")
 
             f.write("RESPONSE RECEIVED:\n\n")
             f.write(str(response) + "\n")
@@ -126,21 +146,28 @@ class TrafficAgent:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")
 
         print(f"\n🔮 [{self.id}] Inizio ciclo autonomo per step {step}...")
-
+        
         # Conversione della direttiva globale dell'orchestratore in formato testuale
         directive_text = json.dumps(global_directive,
                                     ensure_ascii=False) if global_directive else "No global directive yet."
+        
+        self.prompt = PROMPT_MCP.format(agent_id=self.id, managed_intersections=self.managed_intersections, global_directive=directive_text)
 
+        """
+        Creazione della chat ogni volta che viene invocato l'agent. Due motivi principali:
+            1. Se creassimo una chat nell'init, ogni volta che inseriamo un nuovo messaggio, vengono caricati anche tutti i
+               precedenti -> grande consumo di token
+            2. L'agent non deve avere memoria -> è l'orchestratore la componente con memoria
+        # """
         chat = self.connector.create_agentic_chat(
             system_instruction=self.prompt,
             openai_tools=self.openai_tools
         )
 
-        # Invio del messaggi iniziale per innescare ragionamento agent 
+        # Invio del messaggio iniziale per innescare ragionamento agent 
         initial_message = (
             "New simulation step triggered.\n"
             f"Current Step ID: {step}\n"
-            f"Global directive: {directive_text}"
         )
 
         response = await chat.send_message(initial_message)
@@ -150,7 +177,6 @@ class TrafficAgent:
             print(f"⚠️ [{self.id}] L'LLM ha ignorato i tool.")
             return {
                 "stress_index": 0,
-                "priority_score": 0,
                 "prompt_text": "Tool call missing",
                 "actions": []
             }
@@ -199,7 +225,6 @@ class TrafficAgent:
             print(f"⚠️ [{self.id}] Tool obbligatori non chiamati: {missing_tools}")
             return {
                 "stress_index": 0,
-                "priority_score": 0,
                 "prompt_text": "Required tool missing",
                 "actions": []
             }
@@ -217,7 +242,6 @@ class TrafficAgent:
         if not raw_response:
             return {
                 "stress_index": last_stress,
-                "priority_score": last_stress,
                 "prompt_text": "Empty model response",
                 "actions": []
             }
@@ -228,7 +252,6 @@ class TrafficAgent:
             parsed = json.loads(raw_response)
 
             parsed.setdefault("stress_index", last_stress)
-            parsed.setdefault("priority_score", last_stress)
             parsed.setdefault("prompt_text", f"Stress index: {last_stress}")
             parsed.setdefault("actions", [])
 
@@ -238,7 +261,6 @@ class TrafficAgent:
             print(f"⚠️ [{self.id}] JSON non valido:\n{raw_response}")
             return {
                 "stress_index": last_stress,
-                "priority_score": last_stress,
                 "prompt_text": raw_response[:200],
                 "actions": []
             }

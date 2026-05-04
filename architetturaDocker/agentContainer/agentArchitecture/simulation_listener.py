@@ -2,7 +2,6 @@ import os
 import glob
 import json
 import asyncio
-import shutil
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks
@@ -16,22 +15,6 @@ TOPOLOGIES_DIR = os.getenv("TOPOLOGIES_DIR", "/app/agentArchitecture/agent_topol
 MODEL_NAME = os.getenv("MODEL_NAME")
 PROVIDER = os.getenv("PROVIDER")
 HISTORY_SIZE = int(os.getenv("HISTORY_SIZE", "5"))
-
-
-def reset_logs():
-    log_dir = "logs"
-
-    if os.path.exists(log_dir):
-        shutil.rmtree(log_dir)   # elimina TUTTO (anche sottocartelle)
-
-    os.makedirs(log_dir, exist_ok=True)  # ricrea vuota
-
-def policy_to_phase(policy: str) -> int:
-    return {
-        "PRIORITY_MAIN": 0,
-        "FAIR_BALANCE": 1,
-        "CLEAR_QUEUES": 2,
-    }.get(policy, 1)
 
 
 def get_directive_for_agent(global_directive, agent_id):
@@ -89,25 +72,33 @@ class SumoListener:
         print("[SUMO LISTENER] 🌐 Apertura connessioni MCP agenti")
         await asyncio.gather(*[agent.__aenter__() for agent in self.agents])
 
+        print("[SUMO LISTENER] 🌐 Apertura connessione MCP orchestratore")
+        await self.global_orch.__aenter__()
+
         print(f"[SUMO LISTENER] ✅ Sistema pronto. {len(self.agents)} agenti attivi.")
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        print("[SUMO LISTENER] 🔌 Chiusura connessioni MCP")
+        print("[SUMO LISTENER] 🔌 Chiusura connessioni MCP agent")
 
         await asyncio.gather(*[
             agent.__aexit__(exc_type, exc_val, exc_tb)
             for agent in self.agents
         ])
 
+        print("[SUMO LISTENER] 🌐 Chiusura connessione MCP orchestratore")
+        await self.global_orch.__aexit__(exc_type, exc_val, exc_tb)
+
         print("[SUMO LISTENER] 🛑 Spegnimento completato.")
 
     async def workflow(self, step: int):
-        print(f"\n[SUMO LISTENER] ⏱️ Step {step} - avvio workflow")
+        print(f"\n[SUMO LISTENER] ⏱️ Step {step} - avvio workflow\n")
 
         if not self.agents:
             print("[SUMO LISTENER] ⚠️ Nessun agente configurato.")
             return
+
+        print(f"\n[SUMO LISTENER] Avvio lavoro di {len(self.agents)} agent per lo step {step}")
 
         tasks = [
             agent.decide(
@@ -117,8 +108,11 @@ class SumoListener:
             for agent in self.agents
         ]
 
+        # Ricezione della risposta e stampa dell'operazione eseguita (se effettivamente è stata eseguita)
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
+        print(f"\n[SUMO LISTENER] Fine lavoro dei {len(self.agents)} agent per lo step {step}")
+    
         agent_outputs = []
 
         for agent, result in zip(self.agents, results):
@@ -127,77 +121,55 @@ class SumoListener:
                 continue
 
             print(f"   ✅ {agent.id} completato.")
-
-            actions = result.get("actions", [])
-
+            
+            actions = result.get("actions_taken", [])
             agent_outputs.append({
                 "agent_id": agent.id,
                 "zone": agent.id,
                 "stress_index": result.get("stress_index", 0),
-                "priority_score": result.get("priority_score", 0),
                 "prompt_text": result.get("prompt_text", ""),
-                "actions": actions
+                "actions_taken": actions
             })
 
-            for action in actions:
-                tl_id = action.get("intersection_id")
-                policy = action.get("policy")
+            # Stampa delle operazioni eseguite dall'agent (se effettivamente ha eseguito delle azioni)
 
-                if not tl_id or not policy:
-                    continue
+            if actions:
+                print(f"   ⚙️ Azioni intraprese dall'agente {agent.id}:")
+                for action in actions:
+                    tl_id = action.get("intersection_id")
+                    policy = action.get("policy")
+                    phase_index = action.get("phase_index_applied")
 
-                phase_index = policy_to_phase(policy)
+                    print(f"        🚦 {tl_id} → {policy} → fase {phase_index}")
+            else:
+                print(f"   💤 {agent.id} non ha ritenuto necessario cambiare alcuna fase.")
 
-                mcp_result = await agent._mcp_client.call_tool(
-                    "set_traffic_light",
-                    {
-                        "tl_id": tl_id,
-                        "phase_index": phase_index
-                    }
-                )
-
-                print(f"🚦 {tl_id} → {policy} → fase {phase_index} | MCP: {mcp_result}")
-
-
-        if not agent_outputs:
-            print("[SUMO LISTENER] ⚠️ Nessun output valido dagli agenti.")
-            return
-
-        print("\n📡 VETTORE CORRENTE AGENTI:")
+        print(f"\n[SUMO LISTENER] Inizio lavoro orchestratore per lo step {step}")
+        print(f"\n[SUMO LISTENER] L'orchestratore deve lavorare i seguenti dati:\n")
         print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
 
-        stress_vector = {
-            out["agent_id"]: out["stress_index"]
-            for out in agent_outputs
-        }
-
-        history_context = self.history_window[-self.history_size:]
-
-        maybe_decision = self.global_orch.decide(
-            current_vector=agent_outputs,  # JSON completo attuale
-            history_vectors=history_context  # storico compatto
+        decision = self.global_orch.decide(
+            agent_outputs=agent_outputs,
+            step=step,
+            history_size=HISTORY_SIZE
         )
 
-        self.history_window.append(stress_vector)
-        self.history_window = self.history_window[-self.history_size:]
-
-
-        if asyncio.iscoroutine(maybe_decision):
-            global_decision = await maybe_decision
+        if asyncio.iscoroutine(decision):
+            global_decision = await decision
         else:
-            global_decision = maybe_decision
+            global_decision = decision
 
-        print("\n🧭 DIRETTIVE GLOBALI:")
+        print(f"\n[SUMO LISTENER] Fine lavoro dell'orchestratore per lo step {step}:\n")
+        print(f"\n[SUMO LISTENER] Direttive globali prodotte:\n")
         print(json.dumps(global_decision, indent=2, ensure_ascii=False))
 
+        # Setting delle nuove direttive globali
         self.global_directive = global_decision
 
-        print(f"[SUMO LISTENER] 🏁 Step {step} terminato.")
-
+        print(f"[SUMO LISTENER] 🏁 Workflow step {step} terminato.")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    reset_logs()
 
     async with SumoListener(
         agents_dir=TOPOLOGIES_DIR,
