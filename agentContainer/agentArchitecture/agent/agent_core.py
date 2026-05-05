@@ -4,9 +4,10 @@ from agent.agent_policies import PROMPT_MCP
 from fastmcp import Client
 import os
 from datetime import datetime
+from benchmarking import PerformanceBenchmark
 
 # Cartella dove vengono salvate le interazioni degli agent
-LOG_DIR = "/app/logs"
+LOG_DIR = "/logs/agents_decide"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Parametri per evitare looping e hallucination
@@ -27,6 +28,8 @@ class TrafficAgent:
         self.openai_tools = self._define_tools()
         # Client MCP inizializzato in __aenter__, None finché l'agente non è attivo
         self._mcp_client: Client | None = None
+        # Performance benchmarking
+        self.benchmark = PerformanceBenchmark(self.id)
 
     # --- Gestione ciclo di vita del client MCP ---
 
@@ -45,6 +48,14 @@ class TrafficAgent:
             print(f"🔌 [{self.id}] Chiusura connessione SSE persistente...")
             await self._mcp_client.__aexit__(exc_type, exc_val, exc_tb)
             self._mcp_client = None
+        
+        # Export performance benchmarks on shutdown
+        try:
+            benchmark_file = f"{LOG_DIR}/benchmarks/{self.id}_performance.json"
+            os.makedirs(f"{LOG_DIR}/benchmarks", exist_ok=True)
+            self.benchmark.export_json(benchmark_file)
+        except Exception as e:
+            print(f"⚠️ [{self.id}] Errore durante export benchmarks: {e}")
 
     # --- Definizione tools MCP ---
 
@@ -142,6 +153,15 @@ class TrafficAgent:
     """
 
     async def decide(self, step, global_directive=None):
+        """
+        Main decision-making loop with performance benchmarking.
+        Times the entire decision process and records metrics.
+        """
+        # Start performance timing
+        self.benchmark.start_timer()
+        result = None
+        status = "success"
+
         if not self._mcp_client:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")
 
@@ -175,11 +195,13 @@ class TrafficAgent:
         # Verifica dei tool da invocare
         if not response.function_calls:
             print(f"⚠️ [{self.id}] L'LLM ha ignorato i tool.")
+            status = "failure"
             return {
                 "stress_index": 0,
                 "prompt_text": "Tool call missing",
                 "actions": []
             }
+        return result
 
         # Loop agentico
         called_tools = set()
@@ -223,12 +245,13 @@ class TrafficAgent:
         missing_tools = REQUIRED_TOOLS - called_tools
         if missing_tools:
             print(f"⚠️ [{self.id}] Tool obbligatori non chiamati: {missing_tools}")
+            status = "failure"
             return {
                 "stress_index": 0,
                 "prompt_text": "Required tool missing",
                 "actions": []
             }
-
+            return result
         raw_response = response.text
 
         # Logging interazione con l'agent
@@ -240,12 +263,13 @@ class TrafficAgent:
 
         # Parsing della risposta
         if not raw_response:
+            status = "failure"
             return {
                 "stress_index": last_stress,
                 "prompt_text": "Empty model response",
                 "actions": []
             }
-
+            return result
         raw_response = raw_response.replace("```json", "").replace("```", "").strip()
 
         try:
@@ -254,16 +278,32 @@ class TrafficAgent:
             parsed.setdefault("stress_index", last_stress)
             parsed.setdefault("prompt_text", f"Stress index: {last_stress}")
             parsed.setdefault("actions", [])
-
+            result = parsed
+            return result
             return parsed
 
         except Exception:
             print(f"⚠️ [{self.id}] JSON non valido:\n{raw_response}")
+            status = "failure"
             return {
                 "stress_index": last_stress,
                 "prompt_text": raw_response[:200],
                 "actions": []
             }
+            return result
+            raise
+        
+        finally:
+            # Record the decision benchmark
+            self.benchmark.end_timer()
+            self.benchmark.record_decision(
+                tokens_used=0,  # TODO: extract from LLM response metadata if available
+                status=status,
+                metadata={
+                    "step": step,
+                    "decision_result": result.get("stress_index", 0) if result else 0
+                }
+            )
 
     async def _execute_mcp_call(self, tool_name: str, args: dict):
         """Esegue la chiamata MCP riutilizzando la connessione SSE persistente."""
