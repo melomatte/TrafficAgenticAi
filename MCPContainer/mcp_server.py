@@ -138,6 +138,47 @@ async def get_last_global_directive() -> dict:
 
     return global_directive_memory[-1]
 
+@mcp.tool()
+async def set_traffic_light_duration(tl_id: str, duration: float) -> dict:
+    """
+    Modifica la durata residua della fase corrente del semaforo.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{SUMO_API_URL}/set_traffic_light_duration",
+                json={
+                    "tl_id": tl_id,
+                    "duration": duration
+                },
+                timeout=5.0
+            )
+            response.raise_for_status()
+
+        return {
+            "status": "ok",
+            "tl_id": tl_id,
+            "duration": duration
+        }
+
+    except Exception as e:
+        print(f"Errore MCP set_traffic_light_duration: {e}")
+        return {
+            "status": "error",
+            "tl_id": tl_id,
+            "duration": duration,
+            "error": str(e)
+        }
+@mcp.tool()
+async def compute_phase_duration(stress_index: float) -> float:
+    """
+    Compute an adaptive traffic light duration
+    starting from the stress index.
+    """
+
+    duration = min(60, max(15, 20 + stress_index))
+
+    return round(duration, 1)
 
 if __name__ == "__main__":
     print("🚀 Avvio MCP Server in ascolto...")

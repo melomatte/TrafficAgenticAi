@@ -46,6 +46,7 @@ def run_simulation(simulation_name, decision_interval, gui):
     initialize_static_data()
     
     step = 0
+    pipeline_started = False
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         
@@ -76,17 +77,48 @@ def run_simulation(simulation_name, decision_interval, gui):
         # ESECUZIONE COMANDI MCP (Letti dalla memoria condivisa)
         while state.pending_commands:
             cmd = state.pending_commands.pop(0)
+
             try:
-                traci.trafficlight.setPhase(cmd["tls_id"], cmd["phase_index"])
-                print(f"🚦 [SUMO] Fase cambiata: {cmd['tls_id']} -> {cmd['phase_index']}", flush=True)
+                if cmd.get("type") == "set_duration":
+                    traci.trafficlight.setPhaseDuration(
+                        cmd["tls_id"],
+                        cmd["duration"]
+                    )
+
+                    print(
+                        f"⏱️ [SUMO] Durata fase cambiata: "
+                        f"{cmd['tls_id']} -> {cmd['duration']}s",
+                        flush=True
+                    )
+
+                else:
+                    traci.trafficlight.setPhase(
+                        cmd["tls_id"],
+                        cmd["phase_index"]
+                    )
+
+                    print(
+                        f"🚦 [SUMO] Fase cambiata: "
+                        f"{cmd['tls_id']} -> {cmd['phase_index']}",
+                        flush=True
+                    )
+
             except Exception as e:
                 print(f"⚠️ [SUMO] Errore comando: {e}", flush=True)
 
-        # 5. TRIGGER AGENTI
-        if step % decision_interval == 0 and step > 0:
-            print(f"📡 [SUMO] Step {step}: Invio trigger agli agenti...", flush=True)
+        # 5. PRIMO TRIGGER AGENTI, UNA SOLA VOLTA
+        if not pipeline_started and step >= decision_interval:
+            print(f"📡 [SUMO] Step {step}: Primo trigger pipeline agentica...", flush=True)
+
             try:
-                requests.post(AGENT_URL, json={"step": step, "simulation_id": simulation_name}, timeout=1)
+                requests.post(
+                    AGENT_URL,
+                    json={"step": step, "simulation_id": simulation_name},
+                    timeout=1
+                )
+                pipeline_started = True
+                print(f"✅  [SUMO] Pipeline avviata allo step {step}", flush=True)
+
             except Exception as e:
                 print(f"⚠️ [SUMO] Agenti non raggiungibili: {e}", flush=True)
         

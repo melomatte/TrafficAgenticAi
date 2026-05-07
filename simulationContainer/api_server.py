@@ -62,6 +62,15 @@ def set_traffic_light(command: TrafficLightCommand):
         "phase_index": command.phase_index
     }
 
+@app.post("/set_traffic_light_duration")
+def set_traffic_light_duration(payload: dict):
+    state.pending_commands.append({
+        "type": "set_duration",
+        "tls_id": payload["tl_id"],
+        "duration": payload["duration"]
+    })
+    return {"status": "queued"}
+
 def run_fastapi():
     """Avvia il server con gestione degli errori sulla porta."""
     try:

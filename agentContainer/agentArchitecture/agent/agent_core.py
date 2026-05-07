@@ -10,7 +10,7 @@ LOG_DIR = "/app/logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # Parametri per evitare looping e hallucination
-MAX_ITERATIONS = 5
+MAX_ITERATIONS = 8
 REQUIRED_TOOLS = {"compute_stress_index"}
 
 
@@ -65,6 +65,44 @@ class TrafficAgent:
                             },
                         },
                         "required": ["tls_ids"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "compute_phase_duration",
+                    "description": "Compute an adaptive phase duration from the current stress index.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "stress_index": {
+                                "type": "number",
+                                "description": "Current stress index of the agent zone."
+                            }
+                        },
+                        "required": ["stress_index"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "set_traffic_light_duration",
+                    "description": "Changes the duration of the current phase of a specific traffic light intersection.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "tl_id": {
+                                "type": "string",
+                                "description": "The ID of the traffic light intersection."
+                            },
+                            "duration": {
+                                "type": "number",
+                                "description": "New duration in seconds for the current phase."
+                            }
+                        },
+                        "required": ["tl_id", "duration"]
                     }
                 }
             },

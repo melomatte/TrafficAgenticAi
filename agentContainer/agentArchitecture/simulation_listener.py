@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import asyncio
+import time
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks
@@ -10,6 +11,9 @@ from typing import List
 
 from agent import TrafficAgent
 from orchestrator import Orchestrator
+from datetime import datetime
+
+
 
 TOPOLOGIES_DIR = os.getenv("TOPOLOGIES_DIR", "/app/agentArchitecture/agent_topologies")
 MODEL_NAME = os.getenv("MODEL_NAME")
@@ -27,6 +31,9 @@ def get_directive_for_agent(global_directive, agent_id):
 
     return None
 
+def ts():
+    return datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
 
 class SumoTrigger(BaseModel):
     step: int
@@ -42,6 +49,7 @@ class SumoListener:
         self.agents: List[TrafficAgent] = []
         self.global_orch = Orchestrator(model_name=model_name, provider=provider)
         self.global_directive = None
+        self.pipeline_running = False
 
         # finestra storica degli ultimi N vettori agenti
         self.history_window = []
@@ -92,6 +100,9 @@ class SumoListener:
         print("[SUMO LISTENER] 🛑 Spegnimento completato.")
 
     async def workflow(self, step: int):
+        workflow_t0 = time.perf_counter()
+        base_step = int(step)
+
         print(f"\n[SUMO LISTENER] ⏱️ Step {step} - avvio workflow\n")
 
         if not self.agents:
@@ -110,9 +121,10 @@ class SumoListener:
 
         # Ricezione della risposta e stampa dell'operazione eseguita (se effettivamente è stata eseguita)
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        agents_done_step = round(base_step + (time.perf_counter() - workflow_t0))
 
-        print(f"\n[SUMO LISTENER] Fine lavoro dei {len(self.agents)} agent per lo step {step}")
-    
+        print(f"\n[SUMO LISTENER] Fine lavoro dei {len(self.agents)} agent | SUMO step≈{agents_done_step}")
+
         agent_outputs = []
 
         for agent, result in zip(self.agents, results):
@@ -121,7 +133,7 @@ class SumoListener:
                 continue
 
             print(f"   ✅ {agent.id} completato.")
-            
+
             actions = result.get("actions_taken", [])
             agent_outputs.append({
                 "agent_id": agent.id,
@@ -144,13 +156,13 @@ class SumoListener:
             else:
                 print(f"   💤 {agent.id} non ha ritenuto necessario cambiare alcuna fase.")
 
-        print(f"\n[SUMO LISTENER] Inizio lavoro orchestratore per lo step {step}")
+        print(f"\n[SUMO LISTENER] Agenti → Orchestratore | SUMO step≈{agents_done_step}")
         print(f"\n[SUMO LISTENER] L'orchestratore deve lavorare i seguenti dati:\n")
         print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
 
         decision = self.global_orch.decide(
             agent_outputs=agent_outputs,
-            step=step,
+            step=agents_done_step,
             history_size=HISTORY_SIZE
         )
 
@@ -159,7 +171,8 @@ class SumoListener:
         else:
             global_decision = decision
 
-        print(f"\n[SUMO LISTENER] Fine lavoro dell'orchestratore per lo step {step}:\n")
+        orchestrator_done_step = round(base_step + (time.perf_counter() - workflow_t0))
+        print(f"\n[SUMO LISTENER] Fine lavoro orchestratore | SUMO step≈{orchestrator_done_step}")
         print(f"\n[SUMO LISTENER] Direttive globali prodotte:\n")
         print(json.dumps(global_decision, indent=2, ensure_ascii=False))
 
@@ -167,6 +180,36 @@ class SumoListener:
         self.global_directive = global_decision
 
         print(f"[SUMO LISTENER] 🏁 Workflow step {step} terminato.")
+
+    async def pipeline_loop(self, first_sumo_step: int):
+
+        self.pipeline_running = True
+
+        cycle = 0
+        logical_sumo_step = float(first_sumo_step)
+
+        while self.pipeline_running:
+            cycle += 1
+
+            t0 = time.perf_counter()
+
+            print(
+                f"\n[{ts()}] 🔁 CICLO {cycle} | "
+                f"SUMO step={round(logical_sumo_step)}"
+            )
+
+            await self.workflow(round(logical_sumo_step))
+
+            elapsed = time.perf_counter() - t0
+
+            logical_sumo_step += elapsed
+
+            print(
+                f"[{ts()}] ⏱️ CICLO {cycle} finito | "
+                f"SUMO step={round(logical_sumo_step)} | "
+                f"durata reale={elapsed:.2f}s"
+            )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -185,13 +228,18 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/trigger_step")
 async def trigger_step(event: SumoTrigger, background_tasks: BackgroundTasks):
-    background_tasks.add_task(app.state.orch.workflow, event.step)
+    if app.state.orch.pipeline_running:
+        return {"status": "already_running"}
+
+    background_tasks.add_task(app.state.orch.pipeline_loop, event.step)
 
     return {
-        "status": "acknowledged",
-        "message": f"Workflow for step {event.step} started in background"
+        "status": "pipeline_started",
+        "step": event.step
     }
 
+
+    return {"status": "queued"}
 
 if __name__ == "__main__":
     import uvicorn
