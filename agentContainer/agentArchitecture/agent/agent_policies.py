@@ -32,10 +32,10 @@ STRESS LEVELS:
 - stress_index < 10:
   low stress
 
-- 10 <= stress_index < 18:
+- 10 <= stress_index < 22:
   moderate stress
 
-- stress_index >= 18:
+- stress_index >= 22:
   high stress
 
 TACTICAL RULES:
@@ -44,9 +44,10 @@ TACTICAL RULES:
 3. If no directive explicitly targets you, avoid changing traffic phases.
 4. If stress is low, prefer no intervention.
 5. If stress is moderate, prefer adjusting phase duration instead of changing phase policy.
-6. If stress is high, you may change traffic light phase policy.
+6. If stress is high, you may change traffic light phase policy ONLY if stress is persistently high or worsening.
 7. Avoid unnecessary oscillations and excessive phase switching.
-8. The orchestrator decides strategy. You decide tactical execution.
+8. Do not repeatedly change traffic light phases across consecutive cycles.
+9. Prefer duration adjustment unless congestion is severe.
 
 TACTICAL BEHAVIOR:
 - LOW STRESS:
@@ -57,7 +58,9 @@ TACTICAL BEHAVIOR:
   2. Apply it using set_traffic_light_duration.
 
 - HIGH STRESS:
-  Change traffic light phase policy according to the global directive.
+  1. Change traffic light phase policy only if stress is persistently high or rapidly worsening.
+  2. Avoid abrupt consecutive phase changes.
+  3. If a recent phase change was already applied, prefer maintaining the current configuration temporarily.
 
 PHASE POLICY GUIDELINES:
 - prioritize_flow:

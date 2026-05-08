@@ -253,9 +253,6 @@ async def trigger_step(event: SumoTrigger, background_tasks: BackgroundTasks):
         "step": event.step
     }
 
-
-    return {"status": "queued"}
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -28,6 +28,9 @@ class TrafficAgent:
         # Client MCP inizializzato in __aenter__, None finché l'agente non è attivo
         self._mcp_client: Client | None = None
 
+        self.last_phase_change = {}
+        self.min_phase_gap = 30
+
     # --- Gestione ciclo di vita del client MCP ---
 
     async def __aenter__(self):
@@ -237,6 +240,28 @@ class TrafficAgent:
                 called_tools.add(func_name)
 
                 try:
+                    if func_name == "set_traffic_light":
+                        tl_id = args.get("tl_id")
+                        last = self.last_phase_change.get(tl_id, -9999)
+
+                        if step - last < self.min_phase_gap:
+                            print(f"⏳ [{self.id}] Cooldown fase attivo su {tl_id}. Cambio fase saltato.")
+                            tool_result = {
+                                "status": "skipped",
+                                "reason": "phase_change_cooldown",
+                                "tl_id": tl_id
+                            }
+
+                            formatted_response = self.connector.format_tool_response(
+                                func_name,
+                                tool_result,
+                                call_id
+                            )
+                            tool_responses.append(formatted_response)
+                            continue
+
+                        self.last_phase_change[tl_id] = step
+
                     tool_result = await self._execute_mcp_call(func_name, args)
 
                     if func_name == "compute_stress_index":
