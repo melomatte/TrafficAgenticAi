@@ -147,7 +147,7 @@ class Orchestrator:
 
         return "\n".join(lines)
 
-    async def decide(self, step, agent_outputs, history_size):
+    async def decide(self, step, agent_outputs, history_size, history_window=None):
         if not self._mcp_client:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")
 
@@ -155,6 +155,13 @@ class Orchestrator:
         
         # Conversione delle informazioni ricevute dagli agent in formato testuale
         agent_outputs_text = self._format_agents_to_text(agent_outputs)
+
+        history_text = json.dumps(
+            history_window or [],
+            indent=2,
+            ensure_ascii=False
+        )
+
         # Recupero id agenti
         agent_ids = [out.get("agent_id", "unknown") for out in agent_outputs]
         
@@ -174,7 +181,8 @@ class Orchestrator:
         # Invio del messaggio iniziale per innescare ragionamento orchestratore 
         initial_message = (
             "Agent reasoning finished\n"
-            f"Current Step ID: {step}\n"
+            f"Current Step ID: {step}\n\n"
+            f"LAST STRESS HISTORY:\n{history_text}\n\n"
             f"{agent_outputs_text}\n"
         )
 

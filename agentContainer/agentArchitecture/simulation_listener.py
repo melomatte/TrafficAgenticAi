@@ -123,6 +123,7 @@ class SumoListener:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         agents_done_step = round(base_step + (time.perf_counter() - workflow_t0))
 
+
         print(f"\n[SUMO LISTENER] Fine lavoro dei {len(self.agents)} agent | SUMO step≈{agents_done_step}")
 
         agent_outputs = []
@@ -156,6 +157,19 @@ class SumoListener:
             else:
                 print(f"   💤 {agent.id} non ha ritenuto necessario cambiare alcuna fase.")
 
+        self.history_window.append({
+            "step": agents_done_step,
+            "stress": [
+                {
+                    "agent_id": out["agent_id"],
+                    "stress_index": out["stress_index"]
+                }
+                for out in agent_outputs
+            ]
+        })
+
+        self.history_window = self.history_window[-self.history_size:]
+
         print(f"\n[SUMO LISTENER] Agenti → Orchestratore | SUMO step≈{agents_done_step}")
         print(f"\n[SUMO LISTENER] L'orchestratore deve lavorare i seguenti dati:\n")
         print(json.dumps(agent_outputs, indent=2, ensure_ascii=False))
@@ -163,7 +177,8 @@ class SumoListener:
         decision = self.global_orch.decide(
             agent_outputs=agent_outputs,
             step=agents_done_step,
-            history_size=HISTORY_SIZE
+            history_size=HISTORY_SIZE,
+            history_window=self.history_window
         )
 
         if asyncio.iscoroutine(decision):
