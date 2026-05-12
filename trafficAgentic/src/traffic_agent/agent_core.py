@@ -1,44 +1,57 @@
 import json
 from llm_connector import AgentConnector
-from agent.agent_policies import PROMPT_MCP
+from agent_policies import PROMPT_MCP
 from fastmcp import Client
-import os
+from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep_log
 from datetime import datetime
 
 # Cartella dove vengono salvate le interazioni degli agent
-LOG_DIR = "/app/logs"
-os.makedirs(LOG_DIR, exist_ok=True)
+LOG_DIR = "/data/agentPrompt"
 
 # Parametri per evitare looping e hallucination
-MAX_ITERATIONS = 8
+MAX_ITERATIONS = 5
 REQUIRED_TOOLS = {"compute_stress_index"}
 
 
 class TrafficAgent:
 
-    def __init__(self, agent_id: str, topology_file: str, mcp_url="http://mcp_server:8080", model_name="gemini-2.5-pro", provider="cloud"):
-        self.id = f"TrafficAgent-{agent_id}"
-        # Lettura del file della topologia per vedere gli incroci gestiti dall'agent
-        with open(topology_file, "r") as f:
-            self.topology = json.load(f)
+    def __init__(self, agent_id: str, topology: dict, mcp_url: str, model_name: str, provider: str):
+        self.id = agent_id
+        self.topology = topology
         self.managed_intersections = self._extract_intersections()
         self.connector = AgentConnector(agent_name=self.id, provider=provider, model_name=model_name)
         self.mcp_url = mcp_url
         self.openai_tools = self._define_tools()
-        # Client MCP inizializzato in __aenter__, None finché l'agente non è attivo
         self._mcp_client: Client | None = None
 
         self.last_phase_change = {}
         self.min_phase_gap = 30
 
+    def change_topology(self, topology: dict):
+        print(f"[{self.id}] Cambio topologia in seguito a refactoring")
+        self.topology = topology
+        self.managed_intersections = self._extract_intersections()
+
     # --- Gestione ciclo di vita del client MCP ---
 
-    async def __aenter__(self):
-        """Apre la connessione SSE una sola volta. Chiamato automaticamente da 'async with'."""
-        endpoint = f"{self.mcp_url}/sse"
-        print(f"🔌 [{self.id}] Apertura connessione SSE persistente verso {endpoint}...")
+    @retry(
+        # Attende 2 secondi, poi 4, poi 8... (backoff esponenziale)
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        # Se fallisce definitivamente, solleva l'errore originale
+        reraise=True 
+    )
+    async def _connect_with_retry(self, endpoint: str):
+        print(f"🔌 [{self.id}] Tentativo di connessione verso {endpoint}...")
         self._mcp_client = Client(endpoint)
         await self._mcp_client.__aenter__()
+
+    async def __aenter__(self):
+        """Apre la connessione SSE una sola volta."""
+        endpoint = f"{self.mcp_url}"
+        
+        # Chiamiamo la funzione decorata con tenacity
+        await self._connect_with_retry(endpoint)
+        
         print(f"✅ [{self.id}] Connessione SSE aperta con successo.")
         return self
 
@@ -152,7 +165,7 @@ class TrafficAgent:
             f.write(str(response) + "\n")
 
             f.write("\n" + "=" * 80 + "\n")
-            f.write(f"FINISH LOGGING: {step}\n")
+            f.write(f"FINISH LOGGING: {step} | TIME: {datetime.now()}\n")
             f.write("=" * 80 + "\n")
     
     def _extract_intersections(self) -> list[str]:
@@ -186,7 +199,7 @@ class TrafficAgent:
         if not self._mcp_client:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")
 
-        print(f"\n🔮 [{self.id}] Inizio ciclo autonomo per step {step}...")
+        print(f"\n[{self.id}] Inizio ciclo autonomo per step {step}...")
         
         # Conversione della direttiva globale dell'orchestratore in formato testuale
         directive_text = json.dumps(global_directive,
@@ -236,10 +249,12 @@ class TrafficAgent:
                 args = function_call.args
                 call_id = function_call.id
 
-                print(f"🤖 [{self.id}] Tool Calling: {func_name}")
+                print(f"[{self.id}] Tool Calling: {func_name}")
                 called_tools.add(func_name)
 
                 try:
+                    tool_result = await self._execute_mcp_call(func_name, args)
+
                     if func_name == "set_traffic_light":
                         tl_id = args.get("tl_id")
                         last = self.last_phase_change.get(tl_id, -9999)
@@ -271,7 +286,7 @@ class TrafficAgent:
                             last_stress = 0.0
 
                 except Exception as e:
-                    print(f"❌ [{self.id}] Errore MCP Tool '{func_name}': {e}")
+                    print(f"⚠️ [{self.id}] Errore MCP Tool '{func_name}': {e}")
                     tool_result = {"error": str(e)}
 
                 formatted_response = self.connector.format_tool_response(
@@ -332,3 +347,4 @@ class TrafficAgent:
         """Esegue la chiamata MCP riutilizzando la connessione SSE persistente."""
         result = await self._mcp_client.call_tool(tool_name, args)
         return str(result)
+    

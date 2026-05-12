@@ -2,16 +2,26 @@ import argparse
 import glob
 import os
 import time
-import requests
 import traci
 import threading
-
-# Importiamo il server e la memoria condivisa dai nostri nuovi file
-from api_server import run_fastapi
+import requests
+from mcp_server import run_mcp_server
 from shared_memory import state
 
-AGENT_URL = os.getenv("AGENT_URL", "http://agentic_system:8000/trigger_step")
-BASE_DIR = "/app/simulations"
+"""
+comando per esecuzione (da root progetto): 
+    python3 sumo_engine/simulationManager.py --gui "true"
+
+Script per simulazione SUMO + avvio thread mcp server su localhost porta 8001
+"""
+
+# ---------------------------------------------------------------------------
+# Configurazioni Locali
+# ---------------------------------------------------------------------------
+ORCHESTRATOR_URL = "http://localhost:8080/trigger_agentic"
+
+# Percorso locale relativo alla cartella del progetto
+BASE_DIR = os.path.join(os.getcwd(), "sumo_engine", "urbanNetworks")
 
 def find_sumocfg(sim_path):
     files = glob.glob(os.path.join(sim_path, "*.sumocfg"))
@@ -20,8 +30,7 @@ def find_sumocfg(sim_path):
     return files[0]
 
 def initialize_static_data():
-    """Estrae le lunghezze delle corsie e le salva nella memoria condivisa."""
-    print("📏 [SUMO] Estrazione dati statici della rete...", flush=True)
+    print("[SUMO] 📏 Estrazione dati statici della rete...", flush=True)
     for tls_id in traci.trafficlight.getIDList():
         lanes = list(set(traci.trafficlight.getControlledLanes(tls_id)))
         for l_id in lanes:
@@ -29,24 +38,25 @@ def initialize_static_data():
                 state.static_lane_lengths[l_id] = traci.lane.getLength(l_id)
 
 def run_simulation(simulation_name, decision_interval, gui):
-    # 1. Avvio API Server nel thread separato
-    api_thread = threading.Thread(target=run_fastapi, daemon=True)
+    # 1. Avvio MCP Server nel thread separato passando il logger
+    print("[SUMO] Inizializzazione thread MCP Server...", flush=True)
+    api_thread = threading.Thread(target=run_mcp_server, daemon=True)
     api_thread.start()
-
-    # 2. Avvio SUMO
+    
+    # 2. Avvio SUMO Localmente
     sim_path = os.path.join(BASE_DIR, simulation_name)
     sumocfg_file = find_sumocfg(sim_path)
+
     if gui == "true":
         sumo_cmd = ["sumo-gui", "-c", sumocfg_file, "--step-length", "1", "--start"]
     else: 
         sumo_cmd = ["sumo", "-c", sumocfg_file, "--step-length", "1", "--start"]
-
-    print(f"🚗 [SUMO] Avvio simulazione: {simulation_name}", flush=True)
+        
+    print(f"[SUMO] 🚗 Avvio simulazione: {simulation_name}", flush=True)
     traci.start(sumo_cmd)
     initialize_static_data()
     
     step = 0
-    pipeline_started = False
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
         
@@ -74,7 +84,7 @@ def run_simulation(simulation_name, decision_interval, gui):
                 "lanes_status": lanes_status
             }
 
-        # ESECUZIONE COMANDI MCP (Letti dalla memoria condivisa)
+        # ESECUZIONE COMANDI MCP
         while state.pending_commands:
             cmd = state.pending_commands.pop(0)
 
@@ -106,34 +116,34 @@ def run_simulation(simulation_name, decision_interval, gui):
             except Exception as e:
                 print(f"⚠️ [SUMO] Errore comando: {e}", flush=True)
 
-        # 5. PRIMO TRIGGER AGENTI, UNA SOLA VOLTA
-        if not pipeline_started and step >= decision_interval:
-            print(f"📡 [SUMO] Step {step}: Primo trigger pipeline agentica...", flush=True)
-
+        if step == decision_interval:
             try:
-                requests.post(
-                    AGENT_URL,
-                    json={"step": step, "simulation_id": simulation_name},
-                    timeout=1
+                # Questa richiesta HTTP è veloce perché l'Orchestratore avvia il loop in background
+                response = requests.post(
+                    ORCHESTRATOR_URL,
+                    json={"step": 0, "simulation_id": simulation_name},
+                    timeout=10.0
                 )
-                pipeline_started = True
-                print(f"✅  [SUMO] Pipeline avviata allo step {step}", flush=True)
-
+                response.raise_for_status()
+                print("[SUMO] ✅ Loop agentico innescato con successo!")
             except Exception as e:
-                print(f"⚠️ [SUMO] Agenti non raggiungibili: {e}", flush=True)
-        
-        time.sleep(0.5) 
+                print(f"[SUMO] ❌ ERRORE CRITICO: Impossibile contattare l'Orchestratore: {e}")
+                print("La simulazione fisica partirà, ma l'IA non è attiva.")
+                
+        time.sleep(0.5)
         step += 1
 
-    print("🏁 [SUMO] Simulazione completata.", flush=True)
+    print("[SUMO] 🏁 Simulazione completata.", flush=True)
     traci.close()
     os._exit(0)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--simulation_name", required=True)
-    parser.add_argument("--decision_interval", required=True, type=int, default=60)
-    parser.add_argument("--gui", required=True)
+    parser = argparse.ArgumentParser(
+        description="SUMO simulation",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--simulation_name", default="2cross", help="Nome della simulazione")
+    parser.add_argument("--decision_interval", type=int, default=60, help="Step SUMO inizio sistema di monitoraggio agentico")
+    parser.add_argument("--gui", default="false", choices=["true", "false"], help="Abilita la GUI di SUMO")
     args = parser.parse_args()
-
     run_simulation(args.simulation_name, args.decision_interval, args.gui)

@@ -5,15 +5,13 @@ e invia tutto all'LLM per ottenere una direttiva globale.
 """
 
 import json
-import os
 from datetime import datetime
 from fastmcp import Client
 
 from llm_connector import AgentConnector
-from orchestrator.orchestrator_policies import PROMPT_MCP
+from orchestrator_policies import PROMPT_MCP
 
-LOG_DIR = "/app/logs"
-os.makedirs(LOG_DIR, exist_ok=True)
+LOG_DIR = "/data/agentPrompt"
 
 # Parametri per evitare looping e hallucination
 MAX_ITERATIONS = 7
@@ -21,19 +19,18 @@ REQUIRED_TOOLS = {"save_agent_stress", "get_recent_stress"}
 
 class Orchestrator:
 
-    def __init__(self, mcp_url="http://mcp_server:8080", model_name="gemini-2.5-pro", provider="cloud"):
+    def __init__(self, mcp_url: str, model_name: str, provider: str, history_size: int):
         self.id = "global_orchestrator"
         self.connector = AgentConnector(agent_name=self.id,provider=provider,model_name=model_name)
-        self.mcp_url = mcp_url
         self.openai_tools = self._define_tools()
-        # Client MCP inizializzato in __aenter__, None finché l'agente non è attivo
+        self.history_size = history_size
+        self.mcp_url = mcp_url
         self._mcp_client: Client | None = None
-    
     # --- Gestione ciclo di vita del client MCP ---
 
     async def __aenter__(self):
         """Apre la connessione SSE una sola volta. Chiamato automaticamente da 'async with'."""
-        endpoint = f"{self.mcp_url}/sse"
+        endpoint = f"{self.mcp_url}"
         print(f"🔌 [{self.id}] Apertura connessione SSE persistente verso {endpoint}...")
         self._mcp_client = Client(endpoint)
         await self._mcp_client.__aenter__()
@@ -116,7 +113,7 @@ class Orchestrator:
             f.write(str(response) + "\n")
 
             f.write("\n" + "=" * 80 + "\n")
-            f.write(f"FINISH LOGGING: {step}\n")
+            f.write(f"FINISH LOGGING: | TIME: {datetime.now()}{step}\n")
             f.write("=" * 80 + "\n")
 
     def _format_agents_to_text(self, agent_outputs):
@@ -147,7 +144,7 @@ class Orchestrator:
 
         return "\n".join(lines)
 
-    async def decide(self, step, agent_outputs, history_size, history_window=None):
+    async def decide(self, step, agent_outputs):
         if not self._mcp_client:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")
 
@@ -156,16 +153,10 @@ class Orchestrator:
         # Conversione delle informazioni ricevute dagli agent in formato testuale
         agent_outputs_text = self._format_agents_to_text(agent_outputs)
 
-        history_text = json.dumps(
-            history_window or [],
-            indent=2,
-            ensure_ascii=False
-        )
-
         # Recupero id agenti
         agent_ids = [out.get("agent_id", "unknown") for out in agent_outputs]
         
-        self.prompt = PROMPT_MCP.format(history_size=history_size, agent_ids=agent_ids)
+        self.prompt = PROMPT_MCP.format(history_size=self.history_size, agent_ids=agent_ids)
 
         """
         Creazione della chat ogni volta che viene invocato l'agent. Due motivi principali:
@@ -181,8 +172,7 @@ class Orchestrator:
         # Invio del messaggio iniziale per innescare ragionamento orchestratore 
         initial_message = (
             "Agent reasoning finished\n"
-            f"Current Step ID: {step}\n\n"
-            f"LAST STRESS HISTORY:\n{history_text}\n\n"
+            f"Current Step ID: {step}\n"
             f"{agent_outputs_text}\n"
         )
 
@@ -206,7 +196,6 @@ class Orchestrator:
         # Loop agentico
         called_tools = set()
         iteration = 0
-        last_stress = 0.0
 
         while response.function_calls and iteration < MAX_ITERATIONS:
             iteration += 1

@@ -113,12 +113,12 @@ def compute_clusters(k, tls_data, edges_data):
     tls_labels = kmeans.predict(tls_coords)
     edges_labels = kmeans.predict(edges_coords)
 
-    clusters = {f"agent_{i}": {"tls": [], "edges": []} for i in range(k)}
+    clusters = {f"agent-{i}": {"tls": [], "edges": []} for i in range(k)}
     
     for t, label in zip(tls_data, tls_labels):
-        clusters[f"agent_{label}"]["tls"].append(t["id"])
+        clusters[f"agent-{label}"]["tls"].append(t["id"])
     for e, label in zip(edges_data, edges_labels):
-        clusters[f"agent_{label}"]["edges"].append(e["id"])
+        clusters[f"agent-{label}"]["edges"].append(e["id"])
 
     return clusters
 

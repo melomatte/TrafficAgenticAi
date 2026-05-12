@@ -3,7 +3,7 @@ import os
 import json
 import clusteringTopology.topology_library as tb
 
-BASE_DIR = "simulationContainer/urbanNetworks"
+BASE_DIR = "sumo_engine/urbanNetworks"
 
 def find_net_file(sim_folder):
     files = glob.glob(os.path.join(sim_folder, "*.net.xml"))
@@ -30,7 +30,7 @@ def build_topologies(simulation_name: str, k: int, outdir: str):
         print(f"❌ Errore: File di rete non trovato in {sim_folder}")
         return False
 
-    print("1. Estrazione di tutta la rete da XML (senza TraCI)...")
+    print("1. Estrazione di tutta la rete da XML")
     edges_data, tls_data, junctions_data = tb.extract_network_data(net_file)
     # Salvataggio dei file JSON intermedi rimosso
 
@@ -43,7 +43,7 @@ def build_topologies(simulation_name: str, k: int, outdir: str):
     
     # I file di topologia degli agenti vengono salvati direttamente in 'outdir'
     for agent_id, topo in topologies.items():
-        filepath = os.path.join(outdir, f"{agent_id}_topology.json")
+        filepath = os.path.join(outdir, f"{agent_id}.json")
         
         with open(filepath, "w") as f:
             json.dump(topo, f, indent=2)

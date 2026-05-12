@@ -1,0 +1,8 @@
+pydantic
+python-dotenv
+openai
+fastmcp
+fastapi
+uvicorn
+httpx
+kubernetes

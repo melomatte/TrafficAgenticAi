@@ -6,7 +6,7 @@
 venv/
 
 # Risultati testing
-containerLogs/
+data/
 
 # Python cache
 __pycache__/
@@ -19,8 +19,3 @@ api_key.txt
 #  Environment variables (chiavi API, config locali)
 .env
 .env.*
-
-# Logs
-logs/
-agentLogs/
-*.log

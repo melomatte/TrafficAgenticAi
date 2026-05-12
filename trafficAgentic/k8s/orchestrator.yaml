@@ -1,0 +1,101 @@
+# --- 1. PERMESSI (RBAC) PER PERMETTERE A PYTHON DI LEGGERE I POD ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: orchestrator-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: orchestrator-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: orchestrator-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: orchestrator-sa
+roleRef:
+  kind: Role
+  name: orchestrator-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# --- 2. SERVIZIO DI RETE PER RICEVERE I DATI DEGLI AGENTI ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator-service
+spec:
+  selector:
+    app: orchestrator
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+# --- 3. IL DEPLOYMENT ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    metadata:
+      labels:
+        app: orchestrator
+    spec:
+      serviceAccountName: orchestrator-sa # Ora esiste!
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 10.96.0.10
+          - 8.8.8.8
+        searches:
+          - default.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "2"
+      hostAliases:
+      - ip: "192.168.49.1"
+        hostnames:
+        - "host.minikube.internal"
+      containers:
+      - name: orchestrator
+        image: tua-immagine-orchestrator:latest
+        imagePullPolicy: Never # Consigliato per Minikube locale
+        ports:                   
+        - containerPort: 8080
+        volumeMounts:
+        - name: prompt-storage
+          mountPath: /data/agentPrompt
+        env:
+        - name: MCP_SERVER_URL
+          value: "http://host.minikube.internal:8000/mcp/sse"
+        envFrom:
+        - secretRef:
+            name: llm-secrets
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "300m"
+      volumes:
+      - name: prompt-storage
+        hostPath:
+          path: /data/agentPrompt   # <-- DEVE COINCIDERE CON MINIKUBE_MOUNT_TARGET
+          type: DirectoryOrCreate
