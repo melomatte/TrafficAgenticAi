@@ -28,6 +28,10 @@ spec:
     metadata:
       labels:
         app: traffic-agent
+      annotations: # <-- AGGIUNGI QUESTE TRE RIGHE
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
     spec:
       dnsPolicy: "None"
       dnsConfig:

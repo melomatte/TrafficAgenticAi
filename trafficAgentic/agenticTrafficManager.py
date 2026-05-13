@@ -103,6 +103,33 @@ def setup_minikube() -> None:
         _fatal("Errore durante l'avvio di Minikube.", str(e))
 
 # ---------------------------------------------------------------------------
+# Installazione stack grafana prometheus
+# ---------------------------------------------------------------------------
+
+def setup_monitoring() -> None:
+    print("Verifica/Installazione stack Prometheus + Grafana (tramite Helm)...")
+    try:
+        # Aggiunge il repository Helm di Prometheus
+        subprocess.run(
+            ["helm", "repo", "add", "prometheus-community", "https://prometheus-community.github.io/helm-charts"],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        subprocess.run(["helm", "repo", "update"], check=True, stdout=subprocess.DEVNULL)
+
+        # Installa lo stack nel namespace "monitoring"
+        subprocess.run([
+            "helm", "upgrade", "--install", "monitoring-stack", "prometheus-community/kube-prometheus-stack",
+            "--namespace", "monitoring", "--create-namespace",
+            # Impostiamo una password semplice per Grafana in ambiente di sviluppo
+            "--set", "grafana.adminPassword=admin" 
+        ], check=True, stdout=subprocess.DEVNULL)
+        _ok("Prometheus e Grafana installati/aggiornati.")
+    except FileNotFoundError:
+        _warn("Helm non trovato nel PATH. Monitoraggio saltato.")
+    except subprocess.CalledProcessError as e:
+        _warn(f"Errore durante l'installazione di Prometheus/Grafana con Helm: {e}")
+
+# ---------------------------------------------------------------------------
 # Build immagini -> costruisce (in parallelo) le immagini dei container dentro minikube
 # ---------------------------------------------------------------------------
 def build_images() -> bool:
@@ -348,22 +375,21 @@ def start_cluster_logging() -> None:
 # ---------------------------------------------------------------------------
 # Port forwarding
 # ---------------------------------------------------------------------------
-def start_port_forward(service: str, local_port: int, remote_port: int) -> None:
-    """Apre un tunnel localhost:<local_port> → svc/<service>:<remote_port>."""
-    print(f"   🔗 Port-forward: localhost:{local_port} → {service}:{remote_port}")
+def start_port_forward(service: str, local_port: int, remote_port: int, namespace: str = "default") -> None:
+    """Apre un tunnel localhost:<local_port> → svc/<service>:<remote_port> nel namespace specificato."""
+    print(f"   🔗 Port-forward: localhost:{local_port} → {service}:{remote_port} (ns: {namespace})")
     try:
         proc = subprocess.Popen(
             ["kubectl", "port-forward", f"svc/{service}",
-             f"{local_port}:{remote_port}"],
+             f"{local_port}:{remote_port}", "-n", namespace],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
         _port_forward_procs.append(proc)
-        # Breve attesa per verificare che il processo non sia uscito subito
         time.sleep(1.5)
         if proc.poll() is not None:
             _fatal(
                 f"Port-forward verso '{service}' fallito immediatamente.",
-                f"Verifica che il servizio '{service}' esista: kubectl get svc"
+                f"Verifica che il servizio esista: kubectl get svc -n {namespace}"
             )
         _ok(f"Port-forward attivo su localhost:{local_port}")
     except FileNotFoundError:
@@ -537,13 +563,15 @@ def run_application(simulation_name, k):
     # 3. Creazione infrastruttura kubernetes (dentro cluster minikube)
     _header(3, "Infrastruttura (Minikube / K8s)")
     setup_minikube()
+    setup_monitoring()
     start_minikube_mount()
     images_rebuilt = build_images()
     apply_k8s(images_rebuilt, k)
 
     # 4. Networking + mount cartella condivisa (per agent prompt)
     _header(4, "Networking (Bridge Local → Cluster) + mount cartella condivisa (per prompt agent)")
-    start_port_forward("orchestrator-service",  8080, 8080)
+    start_port_forward("orchestrator-service",  8080, 8080, "default")
+    start_port_forward("monitoring-stack-grafana", 3000, 80, namespace="monitoring")
 
     # 5. Logging del cluster
     _header(5, f"Logging Cluster (→ {CONTAINER_DIR}/)")

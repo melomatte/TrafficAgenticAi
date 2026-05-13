@@ -7,3 +7,4 @@ docker
 minikube
 kubernetes
 sumo
+traci

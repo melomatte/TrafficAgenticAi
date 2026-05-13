@@ -54,6 +54,10 @@ spec:
     metadata:
       labels:
         app: orchestrator
+      annotations: # <-- AGGIUNGI QUESTE TRE RIGHE
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: orchestrator-sa # Ora esiste!
       dnsPolicy: "None"

@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from agent_core import TrafficAgent
+from prometheus_fastapi_instrumentator import Instrumentator # <-- 1. AGGIUNGI QUESTO IMPORT
 
 # Configurazioni da ambiente
 AGENT_ID = os.getenv("AGENT_ID")
@@ -102,6 +103,8 @@ async def lifespan(app: FastAPI):
         yield
 
 app = FastAPI(lifespan=lifespan)
+
+Instrumentator().instrument(app).expose(app)
 
 # --- ROTTA 1: Esecuzione Step ---
 # MODIFICATO: Usa BackgroundTasks per non bloccare la risposta HTTP

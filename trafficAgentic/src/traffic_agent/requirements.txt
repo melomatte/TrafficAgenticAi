@@ -6,3 +6,4 @@ fastapi
 uvicorn
 httpx
 tenacity
+prometheus-fastapi-instrumentator
