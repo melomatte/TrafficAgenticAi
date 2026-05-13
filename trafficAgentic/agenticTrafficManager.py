@@ -374,29 +374,26 @@ def start_port_forward(service: str, local_port: int, remote_port: int) -> None:
 # ---------------------------------------------------------------------------
 
 def start_minikube_mount() -> None:
-    """Avvia minikube mount in background per condividere la cartella PROMPT_DIR."""
-    
-    local_path = os.path.abspath(PROMPT_DIR)
-
-    # Il comando minikube mount richiede percorsi assoluti!
-    print(f"\nMontaggio volume condiviso: {local_path} -> /{PROMPT_DIR}")
-    
+    """
+    Crea la cartella condivisa direttamente nel nodo Minikube via SSH.
+    Alternativa a 'minikube mount' che richiede il filesystem 9p (non supportato su WSL2).
+    I pod accedono alla cartella tramite hostPath, che punta a questa directory nel nodo.
+    """
+    print(f"\nCreazione cartella condivisa nel nodo Minikube: /{PROMPT_DIR}")
     try:
-        _mount_proc = subprocess.Popen(
-            ["minikube", "mount", f"{local_path}:/{PROMPT_DIR}"],
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE,
-            text=True # Restituisce stringhe invece di byte
+        result = subprocess.run(
+            ["minikube", "ssh", f"sudo mkdir -p /{PROMPT_DIR} && sudo chmod 777 /{PROMPT_DIR}"],
+            capture_output=True, text=True
         )
-        
-        time.sleep(2)
-        if _mount_proc.poll() is not None:
-            _fatal("Il mount di Minikube sembra essersi interrotto subito","Controlla i permessi della cartella.")
-        else:
-            _ok("Cartella locale montata con successo su Minikube.\n")
-            
+        if result.returncode != 0:
+            _fatal(
+                f"Impossibile creare /{PROMPT_DIR} nel nodo Minikube.",
+                result.stderr.strip() or result.stdout.strip()
+            )
+        _ok(f"Cartella /{PROMPT_DIR} pronta nel nodo Minikube.\n")
     except Exception as e:
-        _fatal(f"Impossibile avviare minikube mount: {e}")
+        _fatal(f"Errore durante minikube ssh: {e}")
+
 
 
 # ---------------------------------------------------------------------------
