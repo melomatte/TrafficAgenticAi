@@ -49,13 +49,13 @@ def _fatal(message: str, hint: str = "") -> None:
     sys.exit(1)
 
 def _ok(msg: str) -> None:
-    print(f"   ✔ {msg}")
+    print(f"    ✅ {msg}")
 
 def _warn(msg: str) -> None:
-    print(f"   ⚠️  {msg}")
+    print(f"    ⚠️  {msg}")
 
 def _info(msg: str) -> None:
-    print(f"   ℹ️  {msg}")
+    print(f"    ℹ️  {msg}")
 
 # ---------------------------------------------------------------------------
 # Setup cartelle -> ripulisce le cartelle con i log dell'architettura
@@ -72,7 +72,7 @@ def setup_directories() -> None:
         os.makedirs(d, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Minikube
+# Avvio minikube
 # ---------------------------------------------------------------------------
 def _minikube_is_running() -> bool:
     result = subprocess.run(
@@ -82,21 +82,22 @@ def _minikube_is_running() -> bool:
     return result.returncode == 0 and result.stdout.strip() == "Running"
 
 def setup_minikube() -> None:
-    print("   Verifica stato cluster Minikube...")
+    print("Verifica stato cluster Minikube...")
     try:
         if _minikube_is_running():
-            _ok("Cluster Minikube già in esecuzione.")
+            _ok("   Cluster Minikube già in esecuzione.")
         else:
-            print("   🚀 Avvio Minikube (4 GB RAM, 2 CPU)...")
+            print("   Avvio Minikube (4 GB RAM, 2 CPU)...")
             subprocess.run(
                 ["minikube", "start", "--driver=docker",
                  "--memory=4096", "--cpus=2"],
                 check=True
             )
+
             # Verifica post-avvio
             if not _minikube_is_running():
-                _fatal("Minikube avviato ma non risponde.",
-                       "Prova: minikube delete && minikube start")
+                _fatal("Minikube avviato ma non risponde.", "Prova: minikube delete && minikube start")
+
             _ok("Cluster Minikube avviato.")
     except subprocess.CalledProcessError as e:
         _fatal("Errore durante l'avvio di Minikube.", str(e))
@@ -121,7 +122,8 @@ def build_images() -> bool:
             with lock:
                 _warn(f"Cartella '{folder}' non trovata — salto {img}")
             return
-        print(f"   🛠  Building {img}...")
+        print(f"Building {img}...")
+
         result = subprocess.run(
             ["minikube", "image", "build", "-t", img, folder],
             capture_output=True
@@ -143,7 +145,7 @@ def build_images() -> bool:
     if not rebuilt:
         _info("Nessuna cartella sorgente trovata: nessuna immagine costruita.")
     
-    print("   🧹 Pulizia immagini orfane in Minikube (image prune)...")
+    print("\nPulizia immagini orfane in Minikube (image prune)...")
     subprocess.run(["minikube", "image", "prune"], stdout=subprocess.DEVNULL)
 
     return rebuilt
@@ -156,7 +158,7 @@ def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
 
     # Secret da .env (cross-platform, senza pipe shell)
     if os.path.exists(ENV_FILE_PATH):
-        print("   Aggiornamento Secret 'llm-secrets'...")
+        print("Aggiornamento Secret 'llm-secrets'...")
         try:
             dry = subprocess.run(
                 ["kubectl", "create", "secret", "generic", "llm-secrets",
@@ -178,29 +180,20 @@ def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
     if not os.path.exists(K8S_DIR):
         _fatal(f"Cartella '{K8S_DIR}/' non trovata.",
                "Assicurati che i manifesti Kubernetes siano presenti.")
-    print(f"   Applicazione manifesti '{K8S_DIR}/'...")
+    print(f"Applicazione manifesti '{K8S_DIR}/'...")
+    
     try:
         subprocess.run(
-            ["kubectl", "apply", "-f", K8S_DIR, "--prune",
-             "-l", "managed-by=agentic-traffic-manager"],
+            ["kubectl", "apply", "-f", K8S_DIR],
             check=True, stdout=subprocess.DEVNULL
         )
-        _ok("Manifesti applicati (risorse orfane rimosse automaticamente).")
+        _ok("Manifesti applicati.")
     except subprocess.CalledProcessError:
-        # Fallback senza --prune se i label non sono presenti
-        try:
-            subprocess.run(
-                ["kubectl", "apply", "-f", K8S_DIR],
-                check=True, stdout=subprocess.DEVNULL
-            )
-            _ok("Manifesti applicati.")
-        except subprocess.CalledProcessError:
-            _fatal(f"Applicazione YAML fallita.",
-                   f"Verifica la sintassi in {K8S_DIR}/")
+        _fatal(f"Applicazione YAML fallita.", f"Verifica la sintassi in {K8S_DIR}/")
     
     # Scaling Imperativo degli Agenti
     # Questo sovrascrive il valore "replicas: 1" presente nel file YAML
-    print(f"   🚀 Scaling 'statefulset/traffic-agent' a {num_replicas} repliche...")
+    print(f"Scaling 'statefulset/traffic-agent' a {num_replicas} repliche...")
     try:
         subprocess.run(
             ["kubectl", "scale", "statefulset/traffic-agent", f"--replicas={num_replicas}"],
@@ -212,7 +205,7 @@ def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
 
     # Rollout restart — solo se c'è codice nuovo
     if images_rebuilt:
-        print("   🔄 Rollout restart (nuove immagini rilevate)...")
+        print("Rollout restart (nuove immagini rilevate)...")
         _rollout_restart()
     else:
         _info("Nessuna immagine ricostruita: skip rollout restart.")
@@ -229,7 +222,7 @@ def _rollout_restart() -> None:
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
 
-    print("   ⏳ Attesa completamento rollout...")
+    print("Attesa completamento rollout...")
     for kind, name in workloads:
         try:
             subprocess.run(
@@ -382,14 +375,11 @@ def start_port_forward(service: str, local_port: int, remote_port: int) -> None:
 
 def start_minikube_mount() -> None:
     """Avvia minikube mount in background per condividere la cartella PROMPT_DIR."""
-    global _mount_proc
     
     local_path = os.path.abspath(PROMPT_DIR)
-    
-    # Aggiungiamo uno slash iniziale per renderlo un percorso assoluto dentro la VM
-    # (es: "data/agentPrompt" diventa "/data/agentPrompt")
-    
-    print(f"   📂 Montaggio volume: {local_path} -> /{PROMPT_DIR}")
+
+    # Il comando minikube mount richiede percorsi assoluti!
+    print(f"\nMontaggio volume condiviso: {local_path} -> /{PROMPT_DIR}")
     
     try:
         _mount_proc = subprocess.Popen(
@@ -401,9 +391,9 @@ def start_minikube_mount() -> None:
         
         time.sleep(2)
         if _mount_proc.poll() is not None:
-            _warn("Il mount di Minikube sembra essersi interrotto subito. Controlla i permessi della cartella.")
+            _fatal("Il mount di Minikube sembra essersi interrotto subito","Controlla i permessi della cartella.")
         else:
-            _ok("Cartella locale montata con successo su Minikube.")
+            _ok("Cartella locale montata con successo su Minikube.\n")
             
     except Exception as e:
         _fatal(f"Impossibile avviare minikube mount: {e}")
@@ -519,32 +509,28 @@ def run_application(simulation_name, k):
         _fatal("Generazione topologie fallita.")
     _ok("Topologie generate.")
 
-    # --- AGGIUNTA: Ciclo di caricamento nel DB ---
+    # 2. Aggiunta topologie a SQlite
     _header(2, "Caricamento Topologie nel backend (tramite api)")
 
-    # Iteriamo su tutti i file nella cartella delle topologie
     for filename in os.listdir(TOPOLOGY_DIR):
         if filename.endswith(".json"):
             file_path = os.path.join(TOPOLOGY_DIR, filename)
             
-            # L'agent_id è il nome del file senza .json
+            # I file vengono salvati con il nome che avrà il pod dell'agente -> traffic-agent-N
             agent_id = "traffic-" + os.path.splitext(filename)[0]
             
             try:
                 with open(file_path, "rb") as f:
-                    # Prepariamo il file per l'invio multipart/form-data
                     files = {"file": (filename, f, "application/json")}
-                    
-                    # Invio al server
                     response = requests.post(f"{BACKEND_URL}/{agent_id}", files=files)
                     
                     if response.status_code == 200:
                         _ok(f"Topologia caricata: {agent_id}")
                     else:
-                        print(f"⚠️ Errore durante il caricamento di {agent_id}: {response.text}")
+                        _fatal(f"Errore durante il caricamento di {agent_id}: {response.text}")
                         
             except Exception as e:
-                _fatal(f"❌ Impossibile caricare la topologia {filename}\nControlla se il server backend è attivo!", e)
+                _fatal(f"Impossibile caricare la topologia {filename}", "Controlla se il server backend è attivo!")
 
     _ok("Tutte le topologie sono state elaborate.")
 

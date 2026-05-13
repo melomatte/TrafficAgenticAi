@@ -50,5 +50,4 @@ def build_topologies(simulation_name: str, k: int, outdir: str):
 
         print(f"   ✅ Salvato: {filepath} (Incroci: {len(topo['graph'])})")
 
-    print("\n🎉 Pipeline completata!")
     return True

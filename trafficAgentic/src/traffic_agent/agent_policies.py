@@ -17,17 +17,6 @@ POLICY TO PHASE MAPPING:
 - FAIR_BALANCE -> phase_index: 1
 - CLEAR_QUEUES -> phase_index: 2
 
-AVAILABLE TOOLS:
-- compute_stress_index
-- compute_phase_duration
-- set_traffic_light_duration
-- set_traffic_light
-
-AVAILABLE ACTIONS:
-1. do_nothing
-2. adjust_phase_duration
-3. change_phase_policy
-
 STRESS LEVELS:
 - stress_index < 10:
   low stress
@@ -54,8 +43,8 @@ TACTICAL BEHAVIOR:
   Prefer keeping the current configuration.
 
 - MODERATE STRESS:
-  1. Compute a new adaptive duration using compute_phase_duration.
-  2. Apply it using set_traffic_light_duration.
+  1. Compute a new adaptive duration
+  2. Apply it
 
 - HIGH STRESS:
   1. Change traffic light phase policy only if stress is persistently high or rapidly worsening.
