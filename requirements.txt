@@ -2,3 +2,8 @@ fastapi
 fastmcp
 requests
 uvicorn
+scikit-learn
+docker
+minikube
+kubernetes
+sumo
