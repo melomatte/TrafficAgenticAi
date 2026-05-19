@@ -1,0 +1,11 @@
+grafana:
+  additionalDataSources:
+    # Il tuo Loki già configurato
+    - name: loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      jsonData:
+        httpHeaderName1: 'X-Scope-OrgID'
+      secureJsonData:
+        httpHeaderValue1: 'local'

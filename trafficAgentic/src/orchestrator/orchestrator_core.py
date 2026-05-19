@@ -7,11 +7,8 @@ e invia tutto all'LLM per ottenere una direttiva globale.
 import json
 from datetime import datetime
 from fastmcp import Client
-
 from llm_connector import AgentConnector
 from orchestrator_policies import PROMPT_MCP
-
-LOG_DIR = "/data/agentPrompt"
 
 # Parametri per evitare looping e hallucination
 MAX_ITERATIONS = 7
@@ -97,24 +94,20 @@ class Orchestrator:
     # --- Definizione funzioni di utilità orchestratore ---
 
     def _log_interaction(self, step, prompt, response):
-        filename = f"{LOG_DIR}/{self.id}.log"
-
-        with open(filename, "a", encoding="utf-8") as f:
-
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"START LOGGING STEP: {step} | TIME: {datetime.now()}\n")
-            f.write("=" * 80 + "\n")
-   
-            f.write("PROMPT TO LLM :\n\n")
-            f.write(prompt)
-            f.write("\n"+ "-" * 80 + "\n")
-
-            f.write("RESPONSE RECEIVED:\n\n")
-            f.write(str(response) + "\n")
-
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"FINISH LOGGING: | TIME: {datetime.now()}{step}\n")
-            f.write("=" * 80 + "\n")
+        """
+        Logga l'interazione in formato JSON su stdout per l'ingestion da parte di Promtail/Loki.
+        """
+        log_payload = {
+            "log_type": "llm_interaction",
+            "agent_id": self.id,
+            "step": step,
+            "timestamp": datetime.now().isoformat(),
+            "prompt_content": prompt,
+            "response_content": str(response)
+        }
+        
+        # Stampa su una singola riga forzando il flush immediato
+        print(json.dumps(log_payload, ensure_ascii=False), flush=True)
 
     def _format_agents_to_text(self, agent_outputs):
         lines = ["Local Agent Output"]

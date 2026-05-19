@@ -6,7 +6,7 @@ import clusteringTopology.topology_library as tb
 BASE_DIR = "sumo_engine/urbanNetworks"
 
 def find_net_file(sim_folder):
-    files = glob.glob(os.path.join(sim_folder, "*.net.xml"))
+    files = glob.glob(os.path.join(sim_folder, "*.net.xml*"))
     if not files:
         # Corretto il testo dell'errore da .sumocfg a .net.xml
         raise FileNotFoundError(f"Nessun .net.xml in {sim_folder}")
@@ -30,7 +30,7 @@ def build_topologies(simulation_name: str, k: int, outdir: str):
         print(f"❌ Errore: File di rete non trovato in {sim_folder}")
         return False
 
-    print("1. Estrazione di tutta la rete da XML")
+    print(f"1. Estrazione di tutta la rete da XML: net -> {net_file}")
     edges_data, tls_data, junctions_data = tb.extract_network_data(net_file)
     # Salvataggio dei file JSON intermedi rimosso
 

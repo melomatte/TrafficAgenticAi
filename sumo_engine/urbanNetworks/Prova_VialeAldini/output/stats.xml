@@ -1,18 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-04-08T12:49:40.366320+01:00 by Eclipse SUMO GUI v1_26_0+0818-8fa21e3b56a
+<!-- generated on 2026-05-14T16:40:09.468342+01:00 by Eclipse SUMO GUI 1.26.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="urbanNetworks/Prova_VialeAldini/osm.net.xml.gz"/>
-        <route-files value="urbanNetworks/Prova_VialeAldini/heavy.rou.xml"/>
-        <additional-files value="urbanNetworks/Prova_VialeAldini/rilevazioni/output.add.xml"/>
+        <net-file value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/osm.net.xml.gz"/>
+        <route-files value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/heavy.rou.xml"/>
+        <additional-files value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/rilevazioni/output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="urbanNetworks/Prova_VialeAldini/output/tripinfos.xml"/>
-        <statistic-output value="urbanNetworks/Prova_VialeAldini/output/stats.xml"/>
+        <tripinfo-output value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/output/tripinfos.xml"/>
+        <statistic-output value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/output/stats.xml"/>
     </output>
+
+    <time>
+        <step-length value="1"/>
+    </time>
 
     <processing>
         <ignore-route-errors value="true"/>
@@ -30,21 +34,26 @@
         <no-step-log value="true"/>
     </report>
 
+    <traci_server>
+        <remote-port value="32821"/>
+    </traci_server>
+
     <gui_only>
-        <gui-settings-file value="urbanNetworks/Prova_VialeAldini/osm.view.xml"/>
+        <gui-settings-file value="/home/matteo/Documents/ScalableReliable/TrafficAgenticAi/sumo_engine/urbanNetworks/Prova_VialeAldini/osm.view.xml"/>
+        <start value="true"/>
     </gui_only>
 
 </sumoConfiguration>
 -->
 
 <statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
-    <performance clockBegin="1775645380.38" clockEnd="1775646421.77" clockDuration="1041.39" traciDuration="0.00" realTimeFactor="0.65" vehicleUpdatesPerSecond="121.26" personUpdatesPerSecond="0.00" begin="0.00" end="680.00" duration="680.00"/>
-    <vehicles loaded="806" inserted="652" running="331" waiting="28"/>
-    <teleports total="5" jam="1" yield="1" wrongLane="3"/>
+    <performance clockBegin="1778769609.48" clockEnd="1778769840.72" clockDuration="231.24" traciDuration="209.19" realTimeFactor="1.77" vehicleUpdatesPerSecond="241.77" personUpdatesPerSecond="0.00" begin="0.00" end="409.00" duration="409.00"/>
+    <vehicles loaded="605" inserted="407" running="230" waiting="2"/>
+    <teleports total="2" jam="1" yield="0" wrongLane="1"/>
     <safety collisions="0" emergencyStops="0" emergencyBraking="0"/>
     <persons loaded="0" running="0" jammed="0"/>
     <personTeleports total="0" abortWait="0" wrongDest="0"/>
-    <vehicleTripStatistics count="321" routeLength="806.55" speed="6.07" duration="142.54" waitingTime="21.19" timeLoss="48.02" departDelay="0.61" departDelayWaiting="-1.00" totalTravelTime="45757.00" totalDepartDelay="195.00"/>
+    <vehicleTripStatistics count="177" routeLength="763.62" speed="6.40" duration="127.75" waitingTime="19.00" timeLoss="41.88" departDelay="0.43" departDelayWaiting="-1.00" totalTravelTime="22611.00" totalDepartDelay="77.00"/>
     <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
     <rideStatistics number="0"/>
     <transportStatistics number="0"/>

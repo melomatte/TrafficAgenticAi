@@ -1,0 +1,77 @@
+<routes>
+    <vType id="car" accel="2.6" decel="4.5" sigma="0.5" length="5" maxSpeed="13.9"/>
+    <route id="r_WE_0" edges="e_r0_c0_to_c1 e_r0_c1_to_c2 e_r0_c2_to_c3 e_r0_c3_to_c4 e_r0_c4_to_c5 e_r0_c5_to_c6 e_r0_c6_to_c7 e_r0_c7_to_c8 e_r0_c8_to_c9"/>
+    <route id="r_WE_1" edges="e_r1_c0_to_c1 e_r1_c1_to_c2 e_r1_c2_to_c3 e_r1_c3_to_c4 e_r1_c4_to_c5 e_r1_c5_to_c6 e_r1_c6_to_c7 e_r1_c7_to_c8 e_r1_c8_to_c9"/>
+    <route id="r_WE_2" edges="e_r2_c0_to_c1 e_r2_c1_to_c2 e_r2_c2_to_c3 e_r2_c3_to_c4 e_r2_c4_to_c5 e_r2_c5_to_c6 e_r2_c6_to_c7 e_r2_c7_to_c8 e_r2_c8_to_c9"/>
+    <route id="r_WE_3" edges="e_r3_c0_to_c1 e_r3_c1_to_c2 e_r3_c2_to_c3 e_r3_c3_to_c4 e_r3_c4_to_c5 e_r3_c5_to_c6 e_r3_c6_to_c7 e_r3_c7_to_c8 e_r3_c8_to_c9"/>
+    <route id="r_WE_4" edges="e_r4_c0_to_c1 e_r4_c1_to_c2 e_r4_c2_to_c3 e_r4_c3_to_c4 e_r4_c4_to_c5 e_r4_c5_to_c6 e_r4_c6_to_c7 e_r4_c7_to_c8 e_r4_c8_to_c9"/>
+    <route id="r_WE_5" edges="e_r5_c0_to_c1 e_r5_c1_to_c2 e_r5_c2_to_c3 e_r5_c3_to_c4 e_r5_c4_to_c5 e_r5_c5_to_c6 e_r5_c6_to_c7 e_r5_c7_to_c8 e_r5_c8_to_c9"/>
+    <route id="r_WE_6" edges="e_r6_c0_to_c1 e_r6_c1_to_c2 e_r6_c2_to_c3 e_r6_c3_to_c4 e_r6_c4_to_c5 e_r6_c5_to_c6 e_r6_c6_to_c7 e_r6_c7_to_c8 e_r6_c8_to_c9"/>
+    <route id="r_WE_7" edges="e_r7_c0_to_c1 e_r7_c1_to_c2 e_r7_c2_to_c3 e_r7_c3_to_c4 e_r7_c4_to_c5 e_r7_c5_to_c6 e_r7_c6_to_c7 e_r7_c7_to_c8 e_r7_c8_to_c9"/>
+    <route id="r_EW_0" edges="e_r0_c9_to_c8 e_r0_c8_to_c7 e_r0_c7_to_c6 e_r0_c6_to_c5 e_r0_c5_to_c4 e_r0_c4_to_c3 e_r0_c3_to_c2 e_r0_c2_to_c1 e_r0_c1_to_c0"/>
+    <route id="r_EW_1" edges="e_r1_c9_to_c8 e_r1_c8_to_c7 e_r1_c7_to_c6 e_r1_c6_to_c5 e_r1_c5_to_c4 e_r1_c4_to_c3 e_r1_c3_to_c2 e_r1_c2_to_c1 e_r1_c1_to_c0"/>
+    <route id="r_EW_2" edges="e_r2_c9_to_c8 e_r2_c8_to_c7 e_r2_c7_to_c6 e_r2_c6_to_c5 e_r2_c5_to_c4 e_r2_c4_to_c3 e_r2_c3_to_c2 e_r2_c2_to_c1 e_r2_c1_to_c0"/>
+    <route id="r_EW_3" edges="e_r3_c9_to_c8 e_r3_c8_to_c7 e_r3_c7_to_c6 e_r3_c6_to_c5 e_r3_c5_to_c4 e_r3_c4_to_c3 e_r3_c3_to_c2 e_r3_c2_to_c1 e_r3_c1_to_c0"/>
+    <route id="r_EW_4" edges="e_r4_c9_to_c8 e_r4_c8_to_c7 e_r4_c7_to_c6 e_r4_c6_to_c5 e_r4_c5_to_c4 e_r4_c4_to_c3 e_r4_c3_to_c2 e_r4_c2_to_c1 e_r4_c1_to_c0"/>
+    <route id="r_EW_5" edges="e_r5_c9_to_c8 e_r5_c8_to_c7 e_r5_c7_to_c6 e_r5_c6_to_c5 e_r5_c5_to_c4 e_r5_c4_to_c3 e_r5_c3_to_c2 e_r5_c2_to_c1 e_r5_c1_to_c0"/>
+    <route id="r_EW_6" edges="e_r6_c9_to_c8 e_r6_c8_to_c7 e_r6_c7_to_c6 e_r6_c6_to_c5 e_r6_c5_to_c4 e_r6_c4_to_c3 e_r6_c3_to_c2 e_r6_c2_to_c1 e_r6_c1_to_c0"/>
+    <route id="r_EW_7" edges="e_r7_c9_to_c8 e_r7_c8_to_c7 e_r7_c7_to_c6 e_r7_c6_to_c5 e_r7_c5_to_c4 e_r7_c4_to_c3 e_r7_c3_to_c2 e_r7_c2_to_c1 e_r7_c1_to_c0"/>
+    <route id="r_SN_0" edges="e_c0_r0_to_r1 e_c0_r1_to_r2 e_c0_r2_to_r3 e_c0_r3_to_r4 e_c0_r4_to_r5 e_c0_r5_to_r6 e_c0_r6_to_r7"/>
+    <route id="r_SN_1" edges="e_c1_r0_to_r1 e_c1_r1_to_r2 e_c1_r2_to_r3 e_c1_r3_to_r4 e_c1_r4_to_r5 e_c1_r5_to_r6 e_c1_r6_to_r7"/>
+    <route id="r_SN_2" edges="e_c2_r0_to_r1 e_c2_r1_to_r2 e_c2_r2_to_r3 e_c2_r3_to_r4 e_c2_r4_to_r5 e_c2_r5_to_r6 e_c2_r6_to_r7"/>
+    <route id="r_SN_3" edges="e_c3_r0_to_r1 e_c3_r1_to_r2 e_c3_r2_to_r3 e_c3_r3_to_r4 e_c3_r4_to_r5 e_c3_r5_to_r6 e_c3_r6_to_r7"/>
+    <route id="r_SN_4" edges="e_c4_r0_to_r1 e_c4_r1_to_r2 e_c4_r2_to_r3 e_c4_r3_to_r4 e_c4_r4_to_r5 e_c4_r5_to_r6 e_c4_r6_to_r7"/>
+    <route id="r_SN_5" edges="e_c5_r0_to_r1 e_c5_r1_to_r2 e_c5_r2_to_r3 e_c5_r3_to_r4 e_c5_r4_to_r5 e_c5_r5_to_r6 e_c5_r6_to_r7"/>
+    <route id="r_SN_6" edges="e_c6_r0_to_r1 e_c6_r1_to_r2 e_c6_r2_to_r3 e_c6_r3_to_r4 e_c6_r4_to_r5 e_c6_r5_to_r6 e_c6_r6_to_r7"/>
+    <route id="r_SN_7" edges="e_c7_r0_to_r1 e_c7_r1_to_r2 e_c7_r2_to_r3 e_c7_r3_to_r4 e_c7_r4_to_r5 e_c7_r5_to_r6 e_c7_r6_to_r7"/>
+    <route id="r_SN_8" edges="e_c8_r0_to_r1 e_c8_r1_to_r2 e_c8_r2_to_r3 e_c8_r3_to_r4 e_c8_r4_to_r5 e_c8_r5_to_r6 e_c8_r6_to_r7"/>
+    <route id="r_SN_9" edges="e_c9_r0_to_r1 e_c9_r1_to_r2 e_c9_r2_to_r3 e_c9_r3_to_r4 e_c9_r4_to_r5 e_c9_r5_to_r6 e_c9_r6_to_r7"/>
+    <route id="r_NS_0" edges="e_c0_r7_to_r6 e_c0_r6_to_r5 e_c0_r5_to_r4 e_c0_r4_to_r3 e_c0_r3_to_r2 e_c0_r2_to_r1 e_c0_r1_to_r0"/>
+    <route id="r_NS_1" edges="e_c1_r7_to_r6 e_c1_r6_to_r5 e_c1_r5_to_r4 e_c1_r4_to_r3 e_c1_r3_to_r2 e_c1_r2_to_r1 e_c1_r1_to_r0"/>
+    <route id="r_NS_2" edges="e_c2_r7_to_r6 e_c2_r6_to_r5 e_c2_r5_to_r4 e_c2_r4_to_r3 e_c2_r3_to_r2 e_c2_r2_to_r1 e_c2_r1_to_r0"/>
+    <route id="r_NS_3" edges="e_c3_r7_to_r6 e_c3_r6_to_r5 e_c3_r5_to_r4 e_c3_r4_to_r3 e_c3_r3_to_r2 e_c3_r2_to_r1 e_c3_r1_to_r0"/>
+    <route id="r_NS_4" edges="e_c4_r7_to_r6 e_c4_r6_to_r5 e_c4_r5_to_r4 e_c4_r4_to_r3 e_c4_r3_to_r2 e_c4_r2_to_r1 e_c4_r1_to_r0"/>
+    <route id="r_NS_5" edges="e_c5_r7_to_r6 e_c5_r6_to_r5 e_c5_r5_to_r4 e_c5_r4_to_r3 e_c5_r3_to_r2 e_c5_r2_to_r1 e_c5_r1_to_r0"/>
+    <route id="r_NS_6" edges="e_c6_r7_to_r6 e_c6_r6_to_r5 e_c6_r5_to_r4 e_c6_r4_to_r3 e_c6_r3_to_r2 e_c6_r2_to_r1 e_c6_r1_to_r0"/>
+    <route id="r_NS_7" edges="e_c7_r7_to_r6 e_c7_r6_to_r5 e_c7_r5_to_r4 e_c7_r4_to_r3 e_c7_r3_to_r2 e_c7_r2_to_r1 e_c7_r1_to_r0"/>
+    <route id="r_NS_8" edges="e_c8_r7_to_r6 e_c8_r6_to_r5 e_c8_r5_to_r4 e_c8_r4_to_r3 e_c8_r3_to_r2 e_c8_r2_to_r1 e_c8_r1_to_r0"/>
+    <route id="r_NS_9" edges="e_c9_r7_to_r6 e_c9_r6_to_r5 e_c9_r5_to_r4 e_c9_r4_to_r3 e_c9_r3_to_r2 e_c9_r2_to_r1 e_c9_r1_to_r0"/>
+
+    <!-- Traffic Flows -->
+    <flow id="f_WE_0" type="car" route="r_WE_0" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_0" type="car" route="r_EW_0" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_1" type="car" route="r_WE_1" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_1" type="car" route="r_EW_1" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_2" type="car" route="r_WE_2" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_2" type="car" route="r_EW_2" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_3" type="car" route="r_WE_3" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_3" type="car" route="r_EW_3" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_4" type="car" route="r_WE_4" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_4" type="car" route="r_EW_4" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_5" type="car" route="r_WE_5" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_5" type="car" route="r_EW_5" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_6" type="car" route="r_WE_6" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_6" type="car" route="r_EW_6" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_WE_7" type="car" route="r_WE_7" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_EW_7" type="car" route="r_EW_7" begin="0" end="3600" vehsPerHour="150"/>
+    <flow id="f_SN_0" type="car" route="r_SN_0" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_0" type="car" route="r_NS_0" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_1" type="car" route="r_SN_1" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_1" type="car" route="r_NS_1" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_2" type="car" route="r_SN_2" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_2" type="car" route="r_NS_2" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_3" type="car" route="r_SN_3" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_3" type="car" route="r_NS_3" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_4" type="car" route="r_SN_4" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_4" type="car" route="r_NS_4" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_5" type="car" route="r_SN_5" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_5" type="car" route="r_NS_5" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_6" type="car" route="r_SN_6" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_6" type="car" route="r_NS_6" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_7" type="car" route="r_SN_7" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_7" type="car" route="r_NS_7" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_8" type="car" route="r_SN_8" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_8" type="car" route="r_NS_8" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_SN_9" type="car" route="r_SN_9" begin="0" end="3600" vehsPerHour="120"/>
+    <flow id="f_NS_9" type="car" route="r_NS_9" begin="0" end="3600" vehsPerHour="120"/>
+</routes>

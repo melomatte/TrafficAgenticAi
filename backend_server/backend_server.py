@@ -20,7 +20,7 @@ app = FastAPI(title="Traffic Persistence Backend")
 # Inizializzazione Server MCP per i tool AI
 mcp = FastMCP("TrafficPersistenceBackend")
 BASE_DIR = os.getcwd()
-DB_DIR = os.path.join(BASE_DIR, "data", "backend")
+DB_DIR = os.path.join(BASE_DIR, "backend_server", "data")
 DB_PATH = os.path.join(DB_DIR, "traffic_state.db")
 
 print(f"🧹 Pulizia cartella '{DB_DIR}'...")
@@ -106,6 +106,23 @@ async def get_topology(agent_id: str):
             return json.loads(row[0])
             
         raise HTTPException(status_code=404, detail=f"Topologia non trovata per {agent_id}")
+
+@app.get("/api/stress")
+async def get_stress_history(limit: int = 1000):
+    """Restituisce gli ultimi stati di stress salvati."""
+    with sqlite3.connect(DB_PATH) as conn:
+        # Impostiamo row_factory per farci restituire dizionari invece di tuple
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Ordiniamo in modo decrescente (DESC) per avere i più recenti
+        cursor.execute(
+            "SELECT agent_id, stress_value AS stress_index, prompt_text, timestamp FROM stress_levels ORDER BY >", 
+            (limit,)
+        )
+        rows = cursor.fetchall()
+
+    return [dict(row) for row in rows]
 
 # ==============================================================================
 # 2. TOOL MCP (Funzioni per gli Agenti LLM e Orchestratore)

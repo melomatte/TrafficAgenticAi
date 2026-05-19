@@ -5,13 +5,9 @@ from fastmcp import Client
 from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep_log
 from datetime import datetime
 
-# Cartella dove vengono salvate le interazioni degli agent
-LOG_DIR = "/data/agentPrompt"
-
 # Parametri per evitare looping e hallucination
 MAX_ITERATIONS = 5
 REQUIRED_TOOLS = {"compute_stress_index"}
-
 
 class TrafficAgent:
 
@@ -149,24 +145,20 @@ class TrafficAgent:
     # --- Definizione funzioni di utilità per l'agent ---
 
     def _log_interaction(self, step, prompt, response):
-        filename = f"{LOG_DIR}/{self.id}.log"
-
-        with open(filename, "a", encoding="utf-8") as f:
-
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"START LOGGING STEP: {step} | TIME: {datetime.now()}\n")
-            f.write("=" * 80 + "\n")
-   
-            f.write("PROMPT TO LLM :\n\n")
-            f.write(prompt)
-            f.write("\n"+ "-" * 80 + "\n")
-
-            f.write("RESPONSE RECEIVED:\n\n")
-            f.write(str(response) + "\n")
-
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"FINISH LOGGING: {step} | TIME: {datetime.now()}\n")
-            f.write("=" * 80 + "\n")
+        """
+        Logga l'interazione in formato JSON su stdout per l'ingestion da parte di Promtail/Loki.
+        """
+        log_payload = {
+            "log_type": "llm_interaction",
+            "agent_id": self.id,
+            "step": step,
+            "timestamp": datetime.now().isoformat(),
+            "prompt_content": prompt,
+            "response_content": str(response)
+        }
+        
+        # Stampa su una singola riga forzando il flush immediato
+        print(json.dumps(log_payload, ensure_ascii=False), flush=True)
     
     def _extract_intersections(self) -> list[str]:
         topo_intersections = []

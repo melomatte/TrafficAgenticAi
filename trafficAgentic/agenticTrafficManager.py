@@ -7,7 +7,6 @@ import sys
 import requests
 import threading
 import time
-import shutil
 from dotenv import load_dotenv
 from clusteringTopology.topology_builder import build_topologies
 
@@ -19,19 +18,17 @@ comando per esecuzione (da root progetto):
 # ---------------------------------------------------------------------------
 # Costanti
 # ---------------------------------------------------------------------------
-LOGS_DIR = "data"
+DATA_DIR = "backend_server/data"
+CONFIG_DIR = "trafficAgentic/config"
 BACKEND_URL = "http://localhost:8000/api/topology"
-CONTAINER_DIR = os.path.join(LOGS_DIR, "container")
-TOPOLOGY_DIR = os.path.join(LOGS_DIR, "agent_topologies")
-PROMPT_DIR = os.path.join(LOGS_DIR, "agentPrompt")
-K8S_DIR = "trafficAgentic/k8s"
+TOPOLOGY_DIR = os.path.join(DATA_DIR, "agent_topologies")
+K8S_DIR = os.path.join(CONFIG_DIR, "k8s")
+DASHBOARD_DIR = os.path.join(CONFIG_DIR, "dashboards")
 ENV_FILE_PATH = "trafficAgentic/.env"
-
 
 PLATFORM = platform.system()
 _shutdown_event    = threading.Event()
 _port_forward_procs: list[subprocess.Popen] = []
-_log_procs: list[subprocess.Popen]          = []   # kubectl logs -f per ogni pod
 _mount_proc: subprocess.Popen = None        # Processo background per il mount
 
 # ---------------------------------------------------------------------------
@@ -58,22 +55,9 @@ def _info(msg: str) -> None:
     print(f"    ℹ️  {msg}")
 
 # ---------------------------------------------------------------------------
-# Setup cartelle -> ripulisce le cartelle con i log dell'architettura
-# ---------------------------------------------------------------------------
-def setup_directories() -> None:
-
-    for d in [CONTAINER_DIR, PROMPT_DIR, TOPOLOGY_DIR]:
-        if os.path.exists(d):
-            print(f"🧹 Pulizia cartella '{d}'...")
-            try:
-                shutil.rmtree(d)
-            except Exception as e:
-                _warn(f"Errore pulizia {d}: {e}")
-        os.makedirs(d, exist_ok=True)
-
-# ---------------------------------------------------------------------------
 # Avvio minikube
 # ---------------------------------------------------------------------------
+
 def _minikube_is_running() -> bool:
     result = subprocess.run(
         ["minikube", "status", "--format", "{{.Host}}"],
@@ -105,29 +89,74 @@ def setup_minikube() -> None:
 # ---------------------------------------------------------------------------
 # Installazione stack grafana prometheus
 # ---------------------------------------------------------------------------
-
 def setup_monitoring() -> None:
-    print("Verifica/Installazione stack Prometheus + Grafana (tramite Helm)...")
+    print("\nVerifica/Installazione stack di monitoraggio ufficiale (Helm)...")
     try:
-        # Aggiunge il repository Helm di Prometheus
-        subprocess.run(
-            ["helm", "repo", "add", "prometheus-community", "https://prometheus-community.github.io/helm-charts"],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
+        # 1. Aggiunta dei repository ufficiali
+        subprocess.run(["helm", "repo", "add", "prometheus-community", "https://prometheus-community.github.io/helm-charts"], check=True, stdout=subprocess.DEVNULL)
+        subprocess.run(["helm", "repo", "add", "grafana", "https://grafana.github.io/helm-charts"], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["helm", "repo", "update"], check=True, stdout=subprocess.DEVNULL)
 
-        # Installa lo stack nel namespace "monitoring"
+        # 2. Installa lo stack Prometheus + Grafana
+        print("   Installazione Prometheus e Grafana...")
+        grafana_config_path = os.path.join(CONFIG_DIR, "grafana.yaml")
         subprocess.run([
             "helm", "upgrade", "--install", "monitoring-stack", "prometheus-community/kube-prometheus-stack",
             "--namespace", "monitoring", "--create-namespace",
-            # Impostiamo una password semplice per Grafana in ambiente di sviluppo
-            "--set", "grafana.adminPassword=admin" 
+            "--set", "grafana.adminPassword=admin",
+            "-f", grafana_config_path
         ], check=True, stdout=subprocess.DEVNULL)
-        _ok("Prometheus e Grafana installati/aggiornati.")
+        
+        # 3. Installa Loki in modalità Monolithic usando il file di configurazione YAML
+        print("   Configurazione ed installazione Grafana Loki (Official Monolithic)...")
+        loki_config_path = os.path.join(CONFIG_DIR, "loki-values.yaml")
+        subprocess.run([
+            "helm", "upgrade", "--install", "loki", "grafana/loki",
+            "--namespace", "monitoring",
+            "-f", loki_config_path
+        ], check=True, stdout=subprocess.DEVNULL)
+        _ok("Loki installato correttamente tramite file di configurazione.")
+
+        # 4. Installa Promtail (Il raccoglitore di log "Plug & Play" per Kubernetes)
+        print("   Installazione Promtail (Log Collector)...")
+        subprocess.run([
+            "helm", "upgrade", "--install", "promtail", "grafana/promtail",
+            "--namespace", "monitoring",
+            # Diciamo a Promtail dove si trova Loki
+            "--set", "config.clients[0].url=http://loki:3100/loki/api/v1/push",
+            # FONDAMENTALE: Usiamo lo stesso tenant 'local' che abbiamo attivato su Loki e Grafana
+            "--set", "config.clients[0].tenant_id=local"
+        ], check=True, stdout=subprocess.DEVNULL)
+
+        # 5. Provisioning delle Dashboard personalizzate
+        if os.path.exists(DASHBOARD_DIR) and os.listdir(DASHBOARD_DIR):
+            print("   Caricamento Dashboard personalizzate in Grafana...")
+            try:
+                # Crea la ConfigMap prendendo tutti i file JSON nella cartella
+                subprocess.run([
+                    "kubectl", "create", "configmap", "custom-grafana-dashboards",
+                    f"--from-file={DASHBOARD_DIR}",
+                    "--namespace", "monitoring", 
+                    "--dry-run=client", "-o", "yaml",
+                    "|", "kubectl", "apply", "-f", "-"
+                ], check=True, stdout=subprocess.DEVNULL)
+                
+                # Applica l'etichetta "magica" che dice a Grafana di leggerla
+                subprocess.run([
+                    "kubectl", "label", "configmap", "custom-grafana-dashboards",
+                    "grafana_dashboard=1",
+                    "--namespace", "monitoring"
+                ], check=True, stdout=subprocess.DEVNULL)
+                
+                _ok("Dashboard caricate con successo.")
+            except subprocess.CalledProcessError as e:
+                _warn(f"Errore durante il caricamento delle dashboard: {e}")
+
+        _ok("Tutti i componenti ufficiali (Prometheus, Grafana, Loki, Alloy) sono pronti.")
     except FileNotFoundError:
         _warn("Helm non trovato nel PATH. Monitoraggio saltato.")
     except subprocess.CalledProcessError as e:
-        _warn(f"Errore durante l'installazione di Prometheus/Grafana con Helm: {e}")
+        _warn(f"Errore durante l'installazione dei componenti: {e}")
 
 # ---------------------------------------------------------------------------
 # Build immagini -> costruisce (in parallelo) le immagini dei container dentro minikube
@@ -315,64 +344,6 @@ def get_all_running_pods() -> list[str]:
     return [n for n in result.stdout.strip().split() if n]
 
 # ---------------------------------------------------------------------------
-# Logging del cluster
-# ---------------------------------------------------------------------------
-def _get_pod_containers(pod_name: str) -> list[str]:
-    """Restituisce i nomi dei container applicativi (non init) di un pod."""
-    result = subprocess.run(
-        ["kubectl", "get", "pod", pod_name,
-         "-o", "jsonpath={.spec.containers[*].name}"],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0 or not result.stdout.strip():
-        return []
-    return result.stdout.strip().split()
- 
-def start_cluster_logging() -> None:
-    """
-    Aggancia i log del cluster con granularità per container:
-    - pod con un solo container  → containerLogs/<pod>.log
-    - pod con più container      → containerLogs/<pod>-<container>.log
- 
-    Un processo kubectl logs -f per container: nessun mixing, nessun duplicato.
-    """
-    # Attesa StatefulSet agenti prima di raccogliere i nomi dei pod
-    try:
-        subprocess.run(
-            ["kubectl", "rollout", "status", "statefulset/traffic-agent", "--timeout=120s"],
-            check=True, stdout=subprocess.DEVNULL
-        )
-    except subprocess.CalledProcessError:
-        _warn("StatefulSet traffic-agent non ancora pronto — log degli agenti potrebbero essere incompleti.")
- 
-    pods = get_all_running_pods()
-    if not pods:
-        _warn("Nessun pod Running trovato da loggare.")
-        return
- 
-    print(f"   Aggancio log per {len(pods)} pod:")
-    for pod in pods:
-        containers = _get_pod_containers(pod)
-        if not containers:
-            _warn(f"Impossibile leggere i container di '{pod}', salto.")
-            continue
- 
-        for container in containers:
-            # Nome file: <pod>.log se container unico, <pod>-<container>.log se multipli
-            filename = f"{pod}.log" if len(containers) == 1 else f"{pod}-{container}.log"
-            log_path = os.path.join(CONTAINER_DIR, filename)
-            try:
-                proc = subprocess.Popen(
-                    ["kubectl", "logs", "-f", pod, "-c", container],
-                    stdout=open(log_path, "w"),
-                    stderr=subprocess.STDOUT,
-                )
-                _log_procs.append(proc)
-                print(f"   📄 {CONTAINER_DIR}/{filename}  ({pod}/{container})")
-            except Exception as e:
-                _warn(f"Impossibile agganciare i log di {pod}/{container}: {e}")
-
-# ---------------------------------------------------------------------------
 # Port forwarding
 # ---------------------------------------------------------------------------
 def start_port_forward(service: str, local_port: int, remote_port: int, namespace: str = "default") -> None:
@@ -430,8 +401,9 @@ def start_minikube_mount() -> None:
 # ---------------------------------------------------------------------------
 def _do_cleanup() -> None:
     """Termina processi figli e rimuove le risorse K8s. Non chiama sys.exit."""
-    print("\n🛑 Avvio procedura di spegnimento...")
+    print("\nAvvio procedura di spegnimento...")
 
+    """
     # 0. Chiudi il processo di Mount
     if _mount_proc:
         print("   Chiusura processo di mount di Minikube...")
@@ -443,23 +415,7 @@ def _do_cleanup() -> None:
                 _mount_proc.kill()
             except Exception:
                 pass
-
-    # 1. Log processes
-    if _log_procs:
-        print(f"   Chiusura {len(_log_procs)} processi di logging...")
-        for proc in _log_procs:
-            try:
-                proc.terminate()
-            except Exception:
-                pass
-        # Attesa fino a 3s per la chiusura ordinata
-        deadline = time.time() + 3
-        for proc in _log_procs:
-            remaining = max(0, deadline - time.time())
-            try:
-                proc.wait(timeout=remaining)
-            except subprocess.TimeoutExpired:
-                proc.kill()
+    """
 
     # 2. Port-forward processes
     if _port_forward_procs:
@@ -487,7 +443,7 @@ def _do_cleanup() -> None:
     )
 
     # 4. Verifica che i pod siano effettivamente terminati (max 30s)
-    print("   ⏳ Attesa terminazione pod (max 30s)...")
+    print("Attesa terminazione pod (max 30s)...")
     deadline = time.time() + 30
     while time.time() < deadline:
         pods = get_all_running_pods()
@@ -498,7 +454,7 @@ def _do_cleanup() -> None:
         _warn("Alcuni pod potrebbero non essersi terminati entro 30s.")
 
     # 5. Spegnimento Minikube
-    print("   🔌 Spegnimento Minikube...")
+    print("Spegnimento Minikube...")
     result = subprocess.run(
         ["minikube", "stop"],
         capture_output=True, text=True
@@ -508,7 +464,7 @@ def _do_cleanup() -> None:
     else:
         _warn(f"Minikube stop ha restituito un errore (non bloccante): {result.stderr.strip()}")
 
-    print("✅ Cluster pulito. Uscita.")
+    _ok("Cluster pulito. Uscita.")
     _shutdown_event.set()
 
 def cleanup(signum=None, frame=None) -> None:
@@ -524,9 +480,6 @@ if PLATFORM != "Windows":
 # Entry point
 # ---------------------------------------------------------------------------
 def run_application(simulation_name, k):
-    
-    # Pulizia dalle precedenti esecuzioni dell'architettura 
-    setup_directories()
 
     # 1. Topologie
     _header(1, "Costruzione Topologie")
@@ -564,7 +517,7 @@ def run_application(simulation_name, k):
     _header(3, "Infrastruttura (Minikube / K8s)")
     setup_minikube()
     setup_monitoring()
-    start_minikube_mount()
+    #start_minikube_mount()
     images_rebuilt = build_images()
     apply_k8s(images_rebuilt, k)
 
@@ -572,10 +525,6 @@ def run_application(simulation_name, k):
     _header(4, "Networking (Bridge Local → Cluster) + mount cartella condivisa (per prompt agent)")
     start_port_forward("orchestrator-service",  8080, 8080, "default")
     start_port_forward("monitoring-stack-grafana", 3000, 80, namespace="monitoring")
-
-    # 5. Logging del cluster
-    _header(5, f"Logging Cluster (→ {CONTAINER_DIR}/)")
-    start_cluster_logging()
 
     # Mettiamo lo script in attesa finché non si preme Ctrl+C
     print("\n"+"-"*50+"\n")
