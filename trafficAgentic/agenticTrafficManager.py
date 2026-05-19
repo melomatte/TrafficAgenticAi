@@ -136,9 +136,7 @@ def setup_monitoring() -> None:
                 subprocess.run([
                     "kubectl", "create", "configmap", "custom-grafana-dashboards",
                     f"--from-file={DASHBOARD_DIR}",
-                    "--namespace", "monitoring", 
-                    "--dry-run=client", "-o", "yaml",
-                    "|", "kubectl", "apply", "-f", "-"
+                    "--namespace", "monitoring"
                 ], check=True, stdout=subprocess.DEVNULL)
                 
                 # Applica l'etichetta "magica" che dice a Grafana di leggerla
@@ -152,11 +150,11 @@ def setup_monitoring() -> None:
             except subprocess.CalledProcessError as e:
                 _warn(f"Errore durante il caricamento delle dashboard: {e}")
 
-        _ok("Tutti i componenti ufficiali (Prometheus, Grafana, Loki, Alloy) sono pronti.")
+        _ok("Tutti i componenti ufficiali (Prometheus, Grafana, Loki, Alloy) sono pronti.\n")
     except FileNotFoundError:
-        _warn("Helm non trovato nel PATH. Monitoraggio saltato.")
+        _warn("Helm non trovato nel PATH. Monitoraggio saltato.\n")
     except subprocess.CalledProcessError as e:
-        _warn(f"Errore durante l'installazione dei componenti: {e}")
+        _warn(f"Errore durante l'installazione dei componenti: {e}\n")
 
 # ---------------------------------------------------------------------------
 # Build immagini -> costruisce (in parallelo) le immagini dei container dentro minikube

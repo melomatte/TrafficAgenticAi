@@ -117,7 +117,7 @@ async def get_stress_history(limit: int = 1000):
 
         # Ordiniamo in modo decrescente (DESC) per avere i più recenti
         cursor.execute(
-            "SELECT agent_id, stress_value AS stress_index, prompt_text, timestamp FROM stress_levels ORDER BY >", 
+            "SELECT agent_id, stress_value AS stress_index, prompt_text, timestamp FROM stress_levels ORDER BY timestamp DESC LIMIT ?" 
             (limit,)
         )
         rows = cursor.fetchall()

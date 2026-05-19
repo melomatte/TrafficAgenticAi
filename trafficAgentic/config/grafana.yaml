@@ -1,6 +1,5 @@
 grafana:
   additionalDataSources:
-    # Il tuo Loki già configurato
     - name: loki
       type: loki
       access: proxy
