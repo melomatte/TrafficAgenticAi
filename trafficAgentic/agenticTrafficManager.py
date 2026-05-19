@@ -71,10 +71,10 @@ def setup_minikube() -> None:
         if _minikube_is_running():
             _ok("   Cluster Minikube già in esecuzione.")
         else:
-            print("   Avvio Minikube (4 GB RAM, 2 CPU)...")
+            print("   Avvio Minikube (8 GB RAM, 4 CPU)...")
             subprocess.run(
                 ["minikube", "start", "--driver=docker",
-                 "--memory=4096", "--cpus=2"],
+                 "--memory=8192", "--cpus=4"],
                 check=True
             )
 
