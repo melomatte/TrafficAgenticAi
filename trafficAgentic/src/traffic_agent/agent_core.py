@@ -5,6 +5,7 @@ from fastmcp import Client
 from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep_log
 from datetime import datetime
 
+
 # Parametri per evitare looping e hallucination
 MAX_ITERATIONS = 5
 REQUIRED_TOOLS = {"compute_stress_index"}
@@ -22,11 +23,6 @@ class TrafficAgent:
 
         self.last_phase_change = {}
         self.min_phase_gap = 30
-
-    def change_topology(self, topology: dict):
-        print(f"[{self.id}] Cambio topologia in seguito a refactoring")
-        self.topology = topology
-        self.managed_intersections = self._extract_intersections()
 
     # --- Gestione ciclo di vita del client MCP ---
 
@@ -186,7 +182,7 @@ class TrafficAgent:
     In casi meno comuni il modello può chiamare i tool uno alla volta (una iterazione per tool),
     per questo MAX_ITERATIONS deve essere impostato ad un numero superiore ai tool che ci si aspetta che vengano chiamati
     """
-
+    
     async def decide(self, step, global_directive=None):
         if not self._mcp_client:
             raise RuntimeError(f"[{self.id}] Client MCP non inizializzato.")

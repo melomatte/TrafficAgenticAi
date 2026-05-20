@@ -10,6 +10,7 @@ from fastmcp import Client
 from llm_connector import AgentConnector
 from orchestrator_policies import PROMPT_MCP
 
+
 # Parametri per evitare looping e hallucination
 MAX_ITERATIONS = 7
 REQUIRED_TOOLS = {"save_agent_stress", "get_recent_stress"}

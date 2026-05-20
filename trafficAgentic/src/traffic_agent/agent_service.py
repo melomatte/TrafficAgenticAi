@@ -125,19 +125,6 @@ async def evaluate_step(payload: EvaluatePayload, background_tasks: BackgroundTa
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- ROTTA 2: Aggiornamento Topologia ---
-@app.post("/reload_topology")
-async def reload_topology():
-    try:
-        new_topo = await app.state.agent_server.fetch_topology_from_backend()
-        return {"status": "success", "message": "Topologia ricaricata", "intersections": len(new_topo.get('intersections', []))}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "agent_id": AGENT_ID}
-
 if __name__ == "__main__":
     import uvicorn
     # Imposta la porta coerente con i tuoi manifest K8s (solitamente 8080 per gli agenti)

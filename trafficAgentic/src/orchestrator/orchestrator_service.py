@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from orchestrator_core import Orchestrator
-from prometheus_fastapi_instrumentator import Instrumentator # <-- 1. AGGIUNGI QUESTO IMPORT
+from prometheus_fastapi_instrumentator import Instrumentator
 from kubernetes import client, config
 
 # Configurazioni da ambiente

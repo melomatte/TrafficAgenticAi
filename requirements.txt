@@ -8,3 +8,4 @@ minikube
 kubernetes
 sumo
 traci
+helm
