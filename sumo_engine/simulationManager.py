@@ -19,8 +19,6 @@ Script per simulazione SUMO + avvio thread mcp server su localhost porta 8001
 # Configurazioni Locali
 # ---------------------------------------------------------------------------
 ORCHESTRATOR_URL = "http://localhost:8080/trigger_agentic"
-
-# Percorso locale relativo alla cartella del progetto
 BASE_DIR = os.path.join(os.getcwd(), "sumo_engine", "urbanNetworks")
 
 def find_sumocfg(sim_path):
@@ -89,29 +87,43 @@ def run_simulation(simulation_name, decision_interval, gui):
             cmd = state.pending_commands.pop(0)
 
             try:
-                if cmd.get("type") == "set_duration":
-                    traci.trafficlight.setPhaseDuration(
-                        cmd["tls_id"],
-                        cmd["duration"]
-                    )
+                tl_id = cmd["tls_id"]
 
-                    print(
-                        f"⏱️ [SUMO] Durata fase cambiata: "
-                        f"{cmd['tls_id']} -> {cmd['duration']}s",
-                        flush=True
-                    )
+                if cmd.get("type") == "set_duration":
+                    traci.trafficlight.setPhaseDuration(tl_id, cmd["duration"])
+                    print(f"⏱️ [SUMO] Durata fase cambiata: {tl_id} -> {cmd['duration']}s", flush=True)
 
                 else:
-                    traci.trafficlight.setPhase(
-                        cmd["tls_id"],
-                        cmd["phase_index"]
-                    )
+                    target_phase = cmd["phase_index"]
+                    current_phase = traci.trafficlight.getPhase(tl_id)
 
-                    print(
-                        f"🚦 [SUMO] Fase cambiata: "
-                        f"{cmd['tls_id']} -> {cmd['phase_index']}",
-                        flush=True
-                    )
+                    # Controllo per errore 0xc2 (Fasi Inesistenti)
+                    logic = traci.trafficlight.getCompleteRedYellowGreenDefinition(tl_id)
+                    num_phases = len(logic[0].phases)
+
+                    if target_phase >= num_phases or target_phase < 0:
+                        print(
+                            f"⚠️ [SUMO] Rifiutato: l'agente ha chiesto la fase {target_phase} "
+                            f"su {tl_id}, ma esistono solo {num_phases} fasi (da 0 a {num_phases-1}).",
+                            flush=True
+                        )
+                        continue
+
+                    # Controllo per frenate d'emergenza
+                    if current_phase != target_phase:
+                        current_state = logic[0].phases[current_phase].state
+                        
+                        # Se il semaforo è attualmente verde per qualcuno, forziamo il giallo invece di passare di colpo alla fase target
+                        if 'G' in current_state or 'g' in current_state:
+                            traci.trafficlight.setPhaseDuration(tl_id, 0)
+                            print(f"🔄 [SUMO] Avvio transizione sicura per {tl_id}: chiusura fase verde in corso.", flush=True)
+                        
+                        else:
+                            # Se siamo già in una fase di transizione (giallo o tutto rosso), è sicuro applicare direttamente il target
+                            traci.trafficlight.setPhase(tl_id, target_phase)
+                            print(f"🚦 [SUMO] Fase cambiata in sicurezza: {tl_id} -> {target_phase}",flush=True)
+                    else: 
+                        print(f"🟢 [SUMO] {tl_id} è già nella fase {target_phase}.", flush=True)
 
             except Exception as e:
                 print(f"⚠️ [SUMO] Errore comando: {e}", flush=True)

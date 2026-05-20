@@ -54,12 +54,12 @@ spec:
     metadata:
       labels:
         app: orchestrator
-      annotations: # <-- AGGIUNGI QUESTE TRE RIGHE
+      annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: orchestrator-sa # Ora esiste!
+      serviceAccountName: orchestrator-sa
       dnsPolicy: "None"
       dnsConfig:
         nameservers:
@@ -78,13 +78,10 @@ spec:
         - "host.minikube.internal"
       containers:
       - name: orchestrator
-        image: tua-immagine-orchestrator:latest
+        image: orchestrator
         imagePullPolicy: Never # Consigliato per Minikube locale
         ports:                   
         - containerPort: 8080
-        volumeMounts:
-        - name: prompt-storage
-          mountPath: /data/agentPrompt
         env:
         - name: MCP_SERVER_URL
           value: "http://host.minikube.internal:8000/mcp/sse"
@@ -98,8 +95,3 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "300m"
-      volumes:
-      - name: prompt-storage
-        hostPath:
-          path: /data/agentPrompt   # <-- DEVE COINCIDERE CON MINIKUBE_MOUNT_TARGET
-          type: DirectoryOrCreate

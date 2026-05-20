@@ -7,7 +7,6 @@ import sys
 import requests
 import threading
 import time
-from dotenv import load_dotenv
 from clusteringTopology.topology_builder import build_topologies
 
 """
@@ -18,6 +17,7 @@ comando per esecuzione (da root progetto):
 # ---------------------------------------------------------------------------
 # Costanti
 # ---------------------------------------------------------------------------
+
 DATA_DIR = "backend_server/data"
 CONFIG_DIR = "trafficAgentic/config"
 BACKEND_URL = "http://localhost:8000/api/topology"
@@ -25,20 +25,18 @@ TOPOLOGY_DIR = os.path.join(DATA_DIR, "agent_topologies")
 K8S_DIR = os.path.join(CONFIG_DIR, "k8s")
 DASHBOARD_DIR = os.path.join(CONFIG_DIR, "dashboards")
 ENV_FILE_PATH = "trafficAgentic/.env"
-
 PLATFORM = platform.system()
-_shutdown_event    = threading.Event()
+
 _port_forward_procs: list[subprocess.Popen] = []
-_mount_proc: subprocess.Popen = None        # Processo background per il mount
 
 # ---------------------------------------------------------------------------
 # Helpers diagnostici
 # ---------------------------------------------------------------------------
+
 def _header(step: int, text: str) -> None:
     print(f"\n{'='*50}\n  {step}. {text}\n{'='*50}\n")
 
 def _fatal(message: str, hint: str = "") -> None:
-    """Stampa un errore strutturato, esegue il cleanup e termina con codice 1."""
     print(f"\n❌  ERRORE: {message}")
     if hint:
         print(f"    ↳ {hint}")
@@ -51,9 +49,6 @@ def _ok(msg: str) -> None:
 def _warn(msg: str) -> None:
     print(f"    ⚠️  {msg}")
 
-def _info(msg: str) -> None:
-    print(f"    ℹ️  {msg}")
-
 # ---------------------------------------------------------------------------
 # Avvio minikube
 # ---------------------------------------------------------------------------
@@ -65,16 +60,16 @@ def _minikube_is_running() -> bool:
     )
     return result.returncode == 0 and result.stdout.strip() == "Running"
 
-def setup_minikube() -> None:
+def setup_minikube(memory: int, cpus: int) -> None:
     print("Verifica stato cluster Minikube...")
     try:
         if _minikube_is_running():
             _ok("   Cluster Minikube già in esecuzione.")
         else:
-            print("   Avvio Minikube (8 GB RAM, 4 CPU)...")
+            print("   Avvio Minikube...")
             subprocess.run(
                 ["minikube", "start", "--driver=docker",
-                 "--memory=8192", "--cpus=4"],
+                 f"--memory={memory}", f"--cpus={cpus}"],
                 check=True
             )
 
@@ -89,15 +84,16 @@ def setup_minikube() -> None:
 # ---------------------------------------------------------------------------
 # Installazione stack grafana prometheus
 # ---------------------------------------------------------------------------
+
 def setup_monitoring() -> None:
-    print("\nVerifica/Installazione stack di monitoraggio ufficiale (Helm)...")
+    print("Verifica/Installazione stack di monitoraggio ufficiale (Helm)...")
     try:
         # 1. Aggiunta dei repository ufficiali
         subprocess.run(["helm", "repo", "add", "prometheus-community", "https://prometheus-community.github.io/helm-charts"], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["helm", "repo", "add", "grafana", "https://grafana.github.io/helm-charts"], check=True, stdout=subprocess.DEVNULL)
         subprocess.run(["helm", "repo", "update"], check=True, stdout=subprocess.DEVNULL)
 
-        # 2. Installa lo stack Prometheus + Grafana
+        # 2. Installazione stack Prometheus + Grafana
         print("   Installazione Prometheus e Grafana...")
         grafana_config_path = os.path.join(CONFIG_DIR, "grafana.yaml")
         subprocess.run([
@@ -107,22 +103,20 @@ def setup_monitoring() -> None:
             "-f", grafana_config_path
         ], check=True, stdout=subprocess.DEVNULL)
         
-        # 3. Installa Loki in modalità Monolithic usando il file di configurazione YAML
-        print("   Configurazione ed installazione Grafana Loki (Official Monolithic)...")
+        # 3. Installazione Loki
+        print("   Configurazione ed installazione Loki...")
         loki_config_path = os.path.join(CONFIG_DIR, "loki-values.yaml")
         subprocess.run([
             "helm", "upgrade", "--install", "loki", "grafana/loki",
             "--namespace", "monitoring",
             "-f", loki_config_path
         ], check=True, stdout=subprocess.DEVNULL)
-        _ok("Loki installato correttamente tramite file di configurazione.")
 
-        # 4. Installa Promtail (Il raccoglitore di log "Plug & Play" per Kubernetes)
-        print("   Installazione Promtail (Log Collector)...")
+        # 4. Installazione Promtail (log collector utilizzato da Loki)
+        print("   Installazione Promtail...")
         subprocess.run([
             "helm", "upgrade", "--install", "promtail", "grafana/promtail",
             "--namespace", "monitoring",
-            # Diciamo a Promtail dove si trova Loki
             "--set", "config.clients[0].url=http://loki:3100/loki/api/v1/push",
             # FONDAMENTALE: Usiamo lo stesso tenant 'local' che abbiamo attivato su Loki e Grafana
             "--set", "config.clients[0].tenant_id=local"
@@ -130,7 +124,7 @@ def setup_monitoring() -> None:
 
         # 5. Provisioning delle Dashboard personalizzate
         if os.path.exists(DASHBOARD_DIR) and os.listdir(DASHBOARD_DIR):
-            print("   Caricamento Dashboard personalizzate in Grafana...")
+            print(f"   Caricamento Dashboard ({DASHBOARD_DIR}) personalizzate in Grafana...")
             try:
                 # Crea la ConfigMap prendendo tutti i file JSON nella cartella
                 subprocess.run([
@@ -146,24 +140,23 @@ def setup_monitoring() -> None:
                     "--namespace", "monitoring"
                 ], check=True, stdout=subprocess.DEVNULL)
                 
-                _ok("Dashboard caricate con successo.")
             except subprocess.CalledProcessError as e:
                 _warn(f"Errore durante il caricamento delle dashboard: {e}")
 
-        _ok("Tutti i componenti ufficiali (Prometheus, Grafana, Loki, Alloy) sono pronti.\n")
+        _ok("Tutti i componenti ufficiali (Prometheus, Grafana, Loki, Promtail) sono pronti.\n")
     except FileNotFoundError:
-        _warn("Helm non trovato nel PATH. Monitoraggio saltato.\n")
+        _fatal("Helm non trovato nel PATH", "Procedi con l'installazione di Helm")
     except subprocess.CalledProcessError as e:
-        _warn(f"Errore durante l'installazione dei componenti: {e}\n")
+        _fatal(f"Errore durante l'installazione dei componenti: {e}\n")
 
 # ---------------------------------------------------------------------------
-# Build immagini -> costruisce (in parallelo) le immagini dei container dentro minikube
+# Build immagini -> costruisce (in parallelo) le immagini dei container dentro Minikube
 # ---------------------------------------------------------------------------
 def build_images() -> bool:
 
     images = [
-        ("tua-immagine-orchestrator:latest", "trafficAgentic/src/orchestrator"),
-        ("tua-immagine-agent:latest",        "trafficAgentic/src/traffic_agent"),
+        ("orchestrator", "trafficAgentic/src/orchestrator"),
+        ("agent",        "trafficAgentic/src/traffic_agent"),
     ]
 
     rebuilt      = False
@@ -197,9 +190,9 @@ def build_images() -> bool:
         _fatal("Build fallita per una o più immagini:\n" + "\n".join(errors))
 
     if not rebuilt:
-        _info("Nessuna cartella sorgente trovata: nessuna immagine costruita.")
+        _warn("Nessuna cartella sorgente trovata: nessuna immagine costruita.")
     
-    print("\nPulizia immagini orfane in Minikube (image prune)...")
+    print("\nPulizia immagini orfane in Minikube...")
     subprocess.run(["minikube", "image", "prune"], stdout=subprocess.DEVNULL)
 
     return rebuilt
@@ -207,12 +200,12 @@ def build_images() -> bool:
 # ---------------------------------------------------------------------------
 # Apply K8s — cross-platform, senza shell=True
 # ---------------------------------------------------------------------------
+
 def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
-    """Crea/aggiorna Secret e manifesti. Fa rollout restart solo se le immagini sono cambiate."""
 
     # Secret da .env (cross-platform, senza pipe shell)
     if os.path.exists(ENV_FILE_PATH):
-        print("Aggiornamento Secret 'llm-secrets'...")
+        print("Aggiornamento Secret 'llm-secrets' (variabili d'ambiente per pod)")
         try:
             dry = subprocess.run(
                 ["kubectl", "create", "secret", "generic", "llm-secrets",
@@ -224,16 +217,15 @@ def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
                 input=dry.stdout, text=True, check=True,
                 stdout=subprocess.DEVNULL
             )
-            _ok("Secret aggiornato.")
         except subprocess.CalledProcessError as e:
             _fatal("Impossibile creare il Secret da .env.", str(e))
     else:
-        _warn("File .env non trovato: Secret non creato.")
+        _fatal("File .env non trovato: Secret non creato.", 
+               "Il file .env deve essere nella cartella trafficAgentic/ e deve avere una struttura del tipo:\nLLM_API_KEY=<chiave>\nLLM_SDK=[litellm, openai, openrouter]\nMODEL_NAME=<modello>\nPROVIDER=[cloud, local]")
 
     # Manifesti YAML
     if not os.path.exists(K8S_DIR):
-        _fatal(f"Cartella '{K8S_DIR}/' non trovata.",
-               "Assicurati che i manifesti Kubernetes siano presenti.")
+        _fatal(f"Cartella '{K8S_DIR}/' non trovata.", "Assicurati che i manifesti Kubernetes siano presenti.")
     print(f"Applicazione manifesti '{K8S_DIR}/'...")
     
     try:
@@ -241,31 +233,28 @@ def apply_k8s(images_rebuilt: bool, num_replicas: int) -> None:
             ["kubectl", "apply", "-f", K8S_DIR],
             check=True, stdout=subprocess.DEVNULL
         )
-        _ok("Manifesti applicati.")
     except subprocess.CalledProcessError:
         _fatal(f"Applicazione YAML fallita.", f"Verifica la sintassi in {K8S_DIR}/")
     
-    # Scaling Imperativo degli Agenti
-    # Questo sovrascrive il valore "replicas: 1" presente nel file YAML
+    # Scaling degli agent -> sovrascrive il valore "replicas: 1" presente nel file YAML
     print(f"Scaling 'statefulset/traffic-agent' a {num_replicas} repliche...")
     try:
         subprocess.run(
             ["kubectl", "scale", "statefulset/traffic-agent", f"--replicas={num_replicas}"],
             check=True, stdout=subprocess.DEVNULL
         )
-        _ok(f"Scaling a {num_replicas} completato.")
     except subprocess.CalledProcessError as e:
-        _warn(f"Impossibile scalare lo StatefulSet: {e}")
+        _fatal(f"Impossibile scalare lo StatefulSet: {e}")
 
     # Rollout restart — solo se c'è codice nuovo
     if images_rebuilt:
         print("Rollout restart (nuove immagini rilevate)...")
         _rollout_restart()
     else:
-        _info("Nessuna immagine ricostruita: skip rollout restart.")
+        print("    ℹ️ Nessuna immagine ricostruita: skip rollout restart.")
 
 def _rollout_restart() -> None:
-    """Riavvio rolling di tutti i workload + attesa completamento."""
+
     workloads = [
         ("deployment", "orchestrator-deployment"),
         ("statefulset", "traffic-agent"),
@@ -285,68 +274,14 @@ def _rollout_restart() -> None:
             )
         except subprocess.CalledProcessError:
             _warn(f"Rollout di {name} non completato entro 180s. Procedo comunque.")
-    _ok("Rollout completato.")
-
-# ---------------------------------------------------------------------------
-# Attesa pod
-# ---------------------------------------------------------------------------
-def wait_for_pod(app_label: str, timeout: int = 180) -> str:
-    """
-    Attende che almeno un pod con la label indicata sia Ready,
-    poi restituisce il suo nome. Unico wait senza doppio polling.
-    """
-    print(f"   ⏳ Attesa pod '{app_label}' (timeout {timeout}s)...")
-    try:
-        subprocess.run(
-            ["kubectl", "wait", "pod",
-             "-l", f"app={app_label}",
-             "--for=condition=Ready",
-             f"--timeout={timeout}s"],
-            check=True, stdout=subprocess.DEVNULL
-        )
-    except subprocess.CalledProcessError:
-        # Dump dello stato per diagnosi rapida
-        diag = subprocess.run(
-            ["kubectl", "describe", "pods", "-l", f"app={app_label}"],
-            capture_output=True, text=True
-        )
-        print(diag.stdout[-3000:])   # ultime 3000 char per non inondare il terminale
-        _fatal(
-            f"Pod '{app_label}' non pronto entro {timeout}s.",
-            f"Ispeziona con: kubectl describe pods -l app={app_label}"
-        )
-
-    result = subprocess.run(
-        ["kubectl", "get", "pods",
-         "-l", f"app={app_label}",
-         "--field-selector=status.phase=Running",
-         "-o", "jsonpath={.items[0].metadata.name}"],
-        capture_output=True, text=True, check=True
-    )
-    pod_name = result.stdout.strip()
-    if not pod_name:
-        _fatal(f"Nessun pod Running per label app={app_label}.")
-    _ok(f"Pod pronto: {pod_name}")
-    return pod_name
-
-def get_all_running_pods() -> list[str]:
-    """Restituisce i nomi di tutti i pod Running nel cluster (esclude Terminating)."""
-    result = subprocess.run(
-        ["kubectl", "get", "pods",
-         "--field-selector=status.phase=Running",
-         "-o", "jsonpath={.items[*].metadata.name}"],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0 or not result.stdout.strip():
-        return []
-    return [n for n in result.stdout.strip().split() if n]
 
 # ---------------------------------------------------------------------------
 # Port forwarding
 # ---------------------------------------------------------------------------
+
 def start_port_forward(service: str, local_port: int, remote_port: int, namespace: str = "default") -> None:
-    """Apre un tunnel localhost:<local_port> → svc/<service>:<remote_port> nel namespace specificato."""
-    print(f"   🔗 Port-forward: localhost:{local_port} → {service}:{remote_port} (ns: {namespace})")
+
+    print(f"Port-forward: localhost:{local_port} → {service}:{remote_port} (ns: {namespace})")
     try:
         proc = subprocess.Popen(
             ["kubectl", "port-forward", f"svc/{service}",
@@ -365,57 +300,13 @@ def start_port_forward(service: str, local_port: int, remote_port: int, namespac
         _fatal("kubectl non trovato nel PATH.")
 
 # ---------------------------------------------------------------------------
-# Mount cartella condivisa per vedere i prompt degli agent
-# ---------------------------------------------------------------------------
-
-def start_minikube_mount() -> None:
-    """Avvia minikube mount in background per condividere la cartella PROMPT_DIR."""
-    
-    local_path = os.path.abspath(PROMPT_DIR)
-
-    # Il comando minikube mount richiede percorsi assoluti!
-    print(f"\nMontaggio volume condiviso: {local_path} -> /{PROMPT_DIR}")
-    
-    try:
-        _mount_proc = subprocess.Popen(
-            ["minikube", "mount", f"{local_path}:/{PROMPT_DIR}"],
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE,
-            text=True # Restituisce stringhe invece di byte
-        )
-        
-        time.sleep(2)
-        if _mount_proc.poll() is not None:
-            _fatal("Il mount di Minikube sembra essersi interrotto subito","Controlla i permessi della cartella.")
-        else:
-            _ok("Cartella locale montata con successo su Minikube.\n")
-            
-    except Exception as e:
-        _fatal(f"Impossibile avviare minikube mount: {e}")
-
-
-# ---------------------------------------------------------------------------
 # Cleanup — separato da sys.exit per essere chiamabile da _fatal
 # ---------------------------------------------------------------------------
+
 def _do_cleanup() -> None:
-    """Termina processi figli e rimuove le risorse K8s. Non chiama sys.exit."""
     print("\nAvvio procedura di spegnimento...")
 
-    """
-    # 0. Chiudi il processo di Mount
-    if _mount_proc:
-        print("   Chiusura processo di mount di Minikube...")
-        try:
-            _mount_proc.terminate()
-            _mount_proc.wait(timeout=3)
-        except Exception:
-            try:
-                _mount_proc.kill()
-            except Exception:
-                pass
-    """
-
-    # 2. Port-forward processes
+    # 1. Port-forward processes
     if _port_forward_procs:
         print(f"   Chiusura {len(_port_forward_procs)} tunnel port-forward...")
         for proc in _port_forward_procs:
@@ -428,7 +319,7 @@ def _do_cleanup() -> None:
                 except Exception:
                     pass
 
-    # 3. Risorse Kubernetes
+    # 2. Risorse Kubernetes
     print("   Rimozione risorse Kubernetes dal cluster...")
     subprocess.run(
         ["kubectl", "delete", "-f", K8S_DIR, "--ignore-not-found=true",
@@ -440,18 +331,7 @@ def _do_cleanup() -> None:
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
 
-    # 4. Verifica che i pod siano effettivamente terminati (max 30s)
-    print("Attesa terminazione pod (max 30s)...")
-    deadline = time.time() + 30
-    while time.time() < deadline:
-        pods = get_all_running_pods()
-        if not pods:
-            break
-        time.sleep(2)
-    else:
-        _warn("Alcuni pod potrebbero non essersi terminati entro 30s.")
-
-    # 5. Spegnimento Minikube
+    # 3. Spegnimento Minikube
     print("Spegnimento Minikube...")
     result = subprocess.run(
         ["minikube", "stop"],
@@ -463,7 +343,6 @@ def _do_cleanup() -> None:
         _warn(f"Minikube stop ha restituito un errore (non bloccante): {result.stderr.strip()}")
 
     _ok("Cluster pulito. Uscita.")
-    _shutdown_event.set()
 
 def cleanup(signum=None, frame=None) -> None:
     """Handler per SIGINT/SIGTERM. Esegue il cleanup e termina con codice 0."""
@@ -477,17 +356,16 @@ if PLATFORM != "Windows":
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
-def run_application(simulation_name, k):
+def run_application(simulation_name, k, memory, cpus):
 
     # 1. Topologie
     _header(1, "Costruzione Topologie")
     success = build_topologies(simulation_name=simulation_name, k=k, outdir=TOPOLOGY_DIR)
     if not success:
         _fatal("Generazione topologie fallita.")
-    _ok("Topologie generate.")
 
     # 2. Aggiunta topologie a SQlite
-    _header(2, "Caricamento Topologie nel backend (tramite api)")
+    _header(2, f"Caricamento topologie nel backend ({BACKEND_URL})")
 
     for filename in os.listdir(TOPOLOGY_DIR):
         if filename.endswith(".json"):
@@ -513,14 +391,15 @@ def run_application(simulation_name, k):
 
     # 3. Creazione infrastruttura kubernetes (dentro cluster minikube)
     _header(3, "Infrastruttura (Minikube / K8s)")
-    setup_minikube()
+    setup_minikube(memory, cpus)
+    print("\n"+"-"*50+"\n")
     setup_monitoring()
-    #start_minikube_mount()
+    print("\n"+"-"*50+"\n")
     images_rebuilt = build_images()
     apply_k8s(images_rebuilt, k)
 
-    # 4. Networking + mount cartella condivisa (per agent prompt)
-    _header(4, "Networking (Bridge Local → Cluster) + mount cartella condivisa (per prompt agent)")
+    # 4. Port forwarding
+    _header(4, "Port forwarding (Bridge Local → Cluster)...")
     start_port_forward("orchestrator-service",  8080, 8080, "default")
     start_port_forward("monitoring-stack-grafana", 3000, 80, namespace="monitoring")
 
@@ -530,16 +409,14 @@ def run_application(simulation_name, k):
         print("Infrastruttura creata e avviata... Premi Ctrl+C per terminare e avviare il cleanup.")
         threading.Event().wait()
     except KeyboardInterrupt:
-        # Cattura la pressione di Ctrl+C
         print("\n[!] Ricevuto segnale di interruzione (Ctrl+C). Avvio procedura di chiusura...")
     finally:
-        # Il blocco finally garantisce che cleanup() venga chiamato 
-        # sia se premi Ctrl+C, sia se si verifica un altro errore imprevisto
         cleanup()
 
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Agentic Traffic Manager",
@@ -547,6 +424,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--simulation_name", default="2cross", help="Nome della simulazione")
     parser.add_argument("--k", type=int, default=2, help="Numero di agenti/cluster")
+    parser.add_argument("--memory", type=int, default=8192, help="RAM dedicata al cluster Minikube")
+    parser.add_argument("--cpus", type=int, default=4, help="Numero di CPU dedicate al cluster Minikube")
     args = parser.parse_args()
 
-    run_application(args.simulation_name, args.k)
+    run_application(args.simulation_name, args.k, args.memory, args.cpus)

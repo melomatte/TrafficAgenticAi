@@ -1,7 +1,6 @@
 from fastmcp import FastMCP
 from typing import List
 from pydantic import BaseModel
-# Importiamo la lavagna condivisa dal tuo file esistente
 from shared_memory import state
 
 class TrafficLightCommand(BaseModel):

@@ -1,23 +1,18 @@
 grafana:
-  # 1. IL TUO FIX PER LA RETE (Bypassa il blocco di Minikube)
   dnsPolicy: "None"
   dnsConfig:
     nameservers:
       - 10.96.0.10
       - 8.8.8.8
     searches:
-      - monitoring.svc.cluster.local # Aggiornato al namespace corretto
+      - monitoring.svc.cluster.local
       - svc.cluster.local
       - cluster.local
     options:
       - name: ndots
         value: "2"
-
-  # 2. IL DOWNLOAD DEL PLUGIN (Ora funzionerà perché Grafana userà 8.8.8.8 per risolvere grafana.com)
   plugins:
     - yesoreyeram-infinity-datasource
-
-  # 3. I TUOI DATA SOURCES
   additionalDataSources:
     - name: loki
       type: loki
@@ -27,7 +22,6 @@ grafana:
         httpHeaderName1: 'X-Scope-OrgID'
       secureJsonData:
         httpHeaderValue1: 'local'
-        
     - name: Infinity-API
       type: yesoreyeram-infinity-datasource
       access: proxy

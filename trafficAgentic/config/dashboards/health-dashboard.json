@@ -3,8 +3,8 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "ad2w5qq",
-    "generation": 5,
-    "creationTimestamp": "2026-05-19T09:29:53Z",
+    "generation": 1,
+    "creationTimestamp": "2026-05-20T08:59:31Z",
     "labels": {},
     "annotations": {}
   },
@@ -17,10 +17,10 @@
             "kind": "DataQuery",
             "group": "grafana",
             "version": "v0",
-            "spec": {},
             "labels": {
               "grafana.app/export-label": "grafana-1"
-            }
+            },
+            "spec": {}
           },
           "enable": true,
           "hide": true,
@@ -51,14 +51,14 @@
                       "kind": "DataQuery",
                       "group": "prometheus",
                       "version": "v0",
+                      "labels": {
+                        "grafana.app/export-label": "prometheus-1"
+                      },
                       "spec": {
                         "editorMode": "code",
                         "expr": "kube_pod_container_status_restarts_total{pod=~\"traffic-agent.*\"}",
                         "legendFormat": "__auto",
                         "range": true
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "prometheus-1"
                       }
                     },
                     "refId": "A",
@@ -142,14 +142,14 @@
                       "kind": "DataQuery",
                       "group": "prometheus",
                       "version": "v0",
+                      "labels": {
+                        "grafana.app/export-label": "prometheus-1"
+                      },
                       "spec": {
                         "editorMode": "code",
                         "expr": "avg_over_time(kube_pod_status_phase{pod=~\"traffic-agent.*\", phase=\"Running\"}[$__range]) * 100",
                         "legendFormat": "__auto",
                         "range": true
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "prometheus-1"
                       }
                     },
                     "refId": "A",
@@ -227,14 +227,14 @@
                       "kind": "DataQuery",
                       "group": "prometheus",
                       "version": "v0",
+                      "labels": {
+                        "grafana.app/export-label": "prometheus-1"
+                      },
                       "spec": {
                         "editorMode": "builder",
                         "expr": "avg_over_time(kube_pod_status_phase{pod=~\"orchestrator.*\", phase=\"Running\"}[$__range]) * 100",
                         "legendFormat": "__auto",
                         "range": true
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "prometheus-1"
                       }
                     },
                     "refId": "A",
@@ -311,14 +311,14 @@
                       "kind": "DataQuery",
                       "group": "prometheus",
                       "version": "v0",
+                      "labels": {
+                        "grafana.app/export-label": "prometheus-1"
+                      },
                       "spec": {
                         "editorMode": "code",
                         "expr": "kube_pod_container_status_restarts_total{pod=~\"orchestrator.*\"}",
                         "legendFormat": "__auto",
                         "range": true
-                      },
-                      "labels": {
-                        "grafana.app/export-label": "prometheus-1"
                       }
                     },
                     "refId": "A",
@@ -450,9 +450,9 @@
     "tags": [],
     "timeSettings": {
       "timezone": "browser",
-      "from": "now-6h",
+      "from": "now-5m",
       "to": "now",
-      "autoRefresh": "",
+      "autoRefresh": "1m",
       "autoRefreshIntervals": [
         "5s",
         "10s",

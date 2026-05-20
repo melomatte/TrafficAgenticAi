@@ -28,7 +28,7 @@ spec:
     metadata:
       labels:
         app: traffic-agent
-      annotations: # <-- AGGIUNGI QUESTE TRE RIGHE
+      annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
@@ -51,13 +51,10 @@ spec:
         - "host.minikube.internal"
       containers:
       - name: agent
-        image: tua-immagine-agent:latest
-        imagePullPolicy: Never # Consigliato per Minikube locale
+        image: agent
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
-        volumeMounts:
-        - name: prompt-storage
-          mountPath: /data/agentPrompt
         env:
         - name: BACKEND_API_URL
           value: "http://host.minikube.internal:8000/api"
@@ -79,8 +76,3 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "300m"
-      volumes:
-      - name: prompt-storage
-        hostPath:
-          path: /data/agentPrompt   # <-- DEVE COINCIDERE CON MINIKUBE_MOUNT_TARGET
-          type: DirectoryOrCreate
