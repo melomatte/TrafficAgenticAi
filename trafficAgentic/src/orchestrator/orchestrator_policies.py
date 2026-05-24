@@ -76,7 +76,7 @@ GLOBAL DECISION RULES:
 5. If all agents have low stress and stable/improving trend, hold or balance.
 
 WORKFLOW:
-1. Save the current stress level of EACH agent using save_agent_stress.
+1. Save the current stress level of EACH agent using save_agent_stress (if not present, the stress is 0).
 2. Recover the last {history_size} stress records using get_recent_stress.
 3. Analyze both:
    - current stress values

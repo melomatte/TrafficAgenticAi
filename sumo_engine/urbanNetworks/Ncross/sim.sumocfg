@@ -1,7 +1,7 @@
 <configuration>
     <input>
-        <net-file value="grid80.net.xml"/>
-        <route-files value="routes.rou.xml"/>
+        <net-file value="grid320.net.xml"/>
+        <route-files value="routes_high_density.rou.xml"/>
     </input>
 
     <time>

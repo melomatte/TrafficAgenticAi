@@ -72,7 +72,16 @@ class AgentListener:
             print(f"[AgentListener-{self.agent_id}] ✅ Dati per Step {step} consegnati all'orchestratore.")
 
         except Exception as e:
-            print(f"[AgentListener-{self.agent_id}] ❌ Errore durante reasoning o invio dati: {e}")
+
+            payload = {
+                "step": step,
+                "agent_id": self.agent_id,
+                "result": ""
+            }
+
+            resp = await self.http_client.post(f"{ORCHESTRATOR_URL}/stress_comunication", json=payload)
+            resp.raise_for_status()
+            print(f"[AgentListener-{self.agent_id}] ❌ Errore durante reasoning o invio dati (verrà inviata riposta vuota): {e}")
 
     async def fetch_topology_from_backend(self) -> dict:
         """Scarica la topologia dal backend (Single Source of Truth)."""
