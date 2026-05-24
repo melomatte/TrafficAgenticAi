@@ -85,46 +85,8 @@ TrafficAgenticAI/
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        LOCAL MACHINE                            │
-│                                                                 │
-│  ┌──────────────────┐      ┌──────────────────────────────┐    │
-│  │  simulationManager│      │     backend_server           │    │
-│  │  (SUMO + TraCI)   │      │  REST + MCP  (port 8000)     │    │
-│  │                  │      │  SQLite: topologies + stress  │    │
-│  │  MCP Server       │      └──────────────┬───────────────┘    │
-│  │  (port 8001)      │                     │                    │
-│  └────────┬─────────┘                     │                    │
-│           │ HTTP POST /trigger_agentic     │ MCP (SSE)          │
-│           ▼                               │                    │
-│  ┌────────────────────────────────────────▼───────────────┐    │
-│  │                   MINIKUBE CLUSTER                      │    │
-│  │                                                         │    │
-│  │  ┌─────────────────────────────────────────────┐       │    │
-│  │  │          orchestrator-deployment             │       │    │
-│  │  │  - Receives /trigger_agentic from SUMO       │       │    │
-│  │  │  - Dispatches to all agents in parallel      │       │    │
-│  │  │  - Calls LLM to issue global directives      │       │    │
-│  │  │  - Reads/writes stress history via MCP       │       │    │
-│  │  └────────────┬────────────────────────────────┘       │    │
-│  │               │ parallel calls                         │    │
-│  │  ┌────────────▼──┐ ┌────────────┐ ┌────────────┐      │    │
-│  │  │ traffic-agent-0│ │agent-1     │ │ agent-N... │      │    │
-│  │  │ (StatefulSet)  │ │            │ │            │      │    │
-│  │  │ Zone 0 tls/edges│ │ Zone 1    │ │  Zone N    │      │    │
-│  │  └───────┬────────┘ └─────┬──────┘ └─────┬──────┘     │    │
-│  │          │                │              │             │    │
-│  │          └────────────────▼──────────────┘             │    │
-│  │                   MCP calls to port 8001               │    │
-│  │            (compute_stress, set_traffic_light, ...)     │    │
-│  │                                                         │    │
-│  │  ┌───────────────────────────────────────────────────┐  │    │
-│  │  │  Monitoring: Prometheus + Grafana + Loki + Promtail│  │    │
-│  │  └───────────────────────────────────────────────────┘  │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
+<img width="807" height="814" alt="image" src="https://github.com/user-attachments/assets/94d26872-05b9-484b-b441-f80407b6badc" />
+
 
 ---
 
