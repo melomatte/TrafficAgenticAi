@@ -417,7 +417,7 @@ This project is open source. See [LICENSE](LICENSE) for details.
 
 | | | |
 |:--:|:--:|:--:|
-| <a href="https://github.com/BlackRaffo70"><img src="https://github.com/BlackRaffo70.png" width="110" alt="avatar Raffaele Neri"></a> | <a href="https://github.com/melomatte"><img src="https://github.com/melomatte.png" width="110" alt="avatar Matteo Melotti"></a> | <a href="https://github.com/marcocrisafulli"><img src="https://github.com/marcocrisafulli.png" width="110" alt="avatar Enrico Borsetti"></a> |
-| **Raffaele Neri**<br/>[@BlackRaffo70](https://github.com/BlackRaffo70) | **Matteo Melotti**<br/>[@melottimatteo](https://github.com/melomatte) | **Marco Crisafulli**<br/>[@marcocrisafulli](https://github.com/marcocrisafulli) |
+| <a href="https://github.com/BlackRaffo70"><img src="https://github.com/BlackRaffo70.png" width="110" alt="avatar Raffaele Neri"></a> | <a href="https://github.com/melomatte"><img src="https://github.com/melomatte.png" width="110" alt="avatar Matteo Melotti"></a> | <a href="https://github.com/MarcoCrisafulli5"><img src="https://github.com/MarcoCrisafulli5.png" width="110" alt="avatar Marco Crisafulli"></a> |
+| **Raffaele Neri**<br/>[@BlackRaffo70](https://github.com/BlackRaffo70) | **Matteo Melotti**<br/>[@melottimatteo](https://github.com/melomatte) | **Marco Crisafulli**<br/>[@MarcoCrisafulli5](https://github.com/MarcoCrisafulli5) |
 
 ---
