@@ -4,239 +4,241 @@ Un sistema di IA agentica multi-agente per il controllo intelligente e autonomo 
 
 ---
 
-## 📋 Overview
+## 📋 Panoramica
 
 TrafficAgenticAI è un progetto di ricerca e ingegneria che combina l'IA agentica con il simulatore di traffico SUMO (Simulation of Urban MObility) per costruire un sistema di gestione del traffico completamente autonomo e distribuito.
 
-Il sistema divide una rete stradale urbana in zone geografiche utilizzando il clustering K-Means. A ciascuna zona è assegnato un TrafficAgent — un agente IA autonomo che osserva la congestione locale, ragiona utilizzando un LLM e agisce sui semafori in tempo reale tramite l'interfaccia TraCI di SUMO. Un agente globale Orchestrator (Orchestratore) coordina tutti gli agenti locali, analizzando le tendenze di stress in tutta la rete ed emettendo direttive strategiche.
+Il sistema divide una rete stradale urbana in zone geografiche tramite clustering K-Means. A ciascuna zona è assegnato un **TrafficAgent** — un agente IA autonomo che osserva la congestione locale, ragiona tramite un LLM e agisce sui semafori in tempo reale attraverso l'interfaccia TraCI di SUMO. Un agente globale **Orchestrator** coordina tutti gli agenti locali, analizzando le tendenze di stress nell'intera rete ed emettendo direttive strategiche.
 
 L'intera infrastruttura degli agenti viene eseguita su Kubernetes (tramite Minikube), con uno stack completo di osservabilità (Prometheus, Grafana, Loki, Promtail) distribuito automaticamente all'avvio.
 
 ---
 
-## ✨ Key Features
+## ✨ Funzionalità Principali
 
-- 🧠 Processo decisionale basato su LLM — gli agenti ragionano usando OpenAI, LiteLLM, OpenRouter, o modelli locali (LM Studio)
-- 🗺️ Clustering automatico delle zone — K-Means divide qualsiasi rete SUMO in k zone per gli agenti all'avvio
-- 🤝 Gerarchia a due livelli — i TrafficAgent locali gestiscono la tattica; l'Orchestrator globale gestisce la strategia
-- 🔌 Tool calling MCP — gli agenti interagiscono con SUMO tramite FastMCP (trasporto SSE)
-- 🐳 Nativo per Kubernetes — gli agenti vengono eseguiti come StatefulSet, l'orchestratore come Deployment, tutto all'interno di Minikube
-- 📊 Osservabilità completa — dashboard Grafana per stress, salute, prompt LLM e log pronti all'uso
-- 🏙️ Reti urbane reali incluse — centro città di Bologna, Viale Aldini e griglie sintetiche
+- 🧠 **Processo decisionale basato su LLM** — gli agenti ragionano usando OpenAI, LiteLLM, OpenRouter o modelli locali (LM Studio)
+- 🗺️ **Clustering automatico delle zone** — K-Means divide qualsiasi rete SUMO in *k* zone all'avvio
+- 🤝 **Gerarchia a due livelli** — i TrafficAgent locali gestiscono la tattica; l'Orchestrator globale gestisce la strategia
+- 🔌 **Tool calling MCP** — gli agenti interagiscono con SUMO tramite FastMCP (trasporto SSE)
+- 🐳 **Nativo per Kubernetes** — gli agenti vengono eseguiti come StatefulSet, l'orchestratore come Deployment, tutto all'interno di Minikube
+- 📊 **Osservabilità completa** — dashboard Grafana per stress, salute, prompt LLM e log, pronte all'uso
+- 🏙️ **Reti urbane reali incluse** — centro città di Bologna, Viale Aldini e griglie sintetiche
 
 ---
 
-## 🗂️ Project Structure
+## 🗂️ Struttura del Progetto
 
 ```
 TrafficAgenticAI/
 │
-├── agenticTrafficManager.py     ← Main entry point: bootstraps K8s, topology, monitoring
+├── agenticTrafficManager.py     ← Entry point principale: avvia K8s, topologia, monitoring
 │
-├── sumo_engine/                 ← SUMO simulation layer
-│   ├── simulationManager.py     ← Runs SUMO via TraCI + triggers agentic loop
-│   ├── mcp_server.py            ← FastMCP server: exposes traffic tools to agents
-│   ├── shared_memory.py         ← Thread-safe state shared between SUMO and MCP
-│   └── urbanNetworks/           ← SUMO network files
-│       ├── cross/               ← Synthetic single intersection
-│       ├── 2cross/              ← Synthetic 2-intersection network
-│       ├── Ncross/              ← Large 80-node grid
-│       ├── Prova_VialeAldini/   ← Real Bologna street (OSM)
-│       ├── Simplified_bolo/     ← Simplified Bologna road network
-│       └── Simplified_bolo_center/  ← Bologna city center (OSM)
+├── sumo_engine/                 ← Livello di simulazione SUMO
+│   ├── simulationManager.py     ← Esegue SUMO via TraCI + avvia il loop agentico
+│   ├── mcp_server.py            ← Server FastMCP: espone strumenti di traffico agli agenti
+│   ├── shared_memory.py         ← Stato condiviso thread-safe tra SUMO e MCP
+│   └── urbanNetworks/           ← File di rete SUMO
+│       ├── cross/               ← Singola intersezione sintetica
+│       ├── 2cross/              ← Rete a 2 intersezioni sintetiche
+│       ├── Ncross/              ← Griglia larga con 80 nodi
+│       ├── Prova_VialeAldini/   ← Via reale di Bologna (OSM)
+│       ├── Simplified_bolo/     ← Rete stradale Bologna semplificata
+│       └── Simplified_bolo_center/  ← Centro città di Bologna (OSM)
 │
-├── trafficAgentic/              ← Agentic AI layer
-│   ├── clusteringTopology/      ← K-Means network partitioning
-│   │   ├── topology_builder.py  ← Builds topologies from SUMO .net.xml
-│   │   └── topology_library.py  ← Network parsing, clustering, Token-Slim format
+├── trafficAgentic/              ← Livello IA agentica
+│   ├── clusteringTopology/      ← Partizionamento K-Means della rete
+│   │   ├── topology_builder.py  ← Costruisce topologie dal file SUMO .net.xml
+│   │   └── topology_library.py  ← Parsing rete, clustering, formato Token-Slim
 │   ├── src/
-│   │   ├── traffic_agent/       ← Local agent (runs as K8s StatefulSet)
-│   │   │   ├── agent_core.py    ← Agentic loop with MCP tool calling
-│   │   │   ├── agent_service.py ← FastAPI service (receives triggers)
-│   │   │   ├── agent_policies.py ← System prompt for the agent LLM
-│   │   │   ├── llm_connector.py ← Unified LLM interface (OpenAI/LiteLLM/OpenRouter/Local)
-│   │   │   ├── adapter_connector.py ← SDK adapters + unified response wrappers
+│   │   ├── traffic_agent/       ← Agente locale (gira come K8s StatefulSet)
+│   │   │   ├── agent_core.py    ← Loop agentico con MCP tool calling
+│   │   │   ├── agent_service.py ← Servizio FastAPI (riceve trigger)
+│   │   │   ├── agent_policies.py ← System prompt per l'LLM dell'agente
+│   │   │   ├── llm_connector.py ← Interfaccia LLM unificata (OpenAI/LiteLLM/OpenRouter/Locale)
+│   │   │   ├── adapter_connector.py ← Adapter SDK + wrapper risposta unificati
 │   │   │   ├── Dockerfile
 │   │   │   └── requirements.txt
-│   │   └── orchestrator/        ← Global orchestrator (runs as K8s Deployment)
-│   │       ├── orchestrator_core.py  ← Aggregates agent outputs, issues directives
-│   │       ├── orchestrator_service.py ← FastAPI service
-│   │       ├── orchestrator_policies.py ← System prompt for the orchestrator LLM
+│   │   └── orchestrator/        ← Orchestratore globale (gira come K8s Deployment)
+│   │       ├── orchestrator_core.py  ← Aggrega output agenti, emette direttive
+│   │       ├── orchestrator_service.py ← Servizio FastAPI
+│   │       ├── orchestrator_policies.py ← System prompt per l'LLM dell'orchestratore
 │   │       ├── llm_connector.py
 │   │       ├── adapter_connector.py
 │   │       ├── Dockerfile
 │   │       └── requirements.txt
 │   └── config/
-│       ├── grafana.yaml         ← Helm values for Grafana/Prometheus stack
-│       ├── loki-values.yaml     ← Helm values for Loki
-│       ├── dashboards/          ← Custom Grafana dashboards (stress, health, prompts, logs)
-│       └── k8s/                 ← Kubernetes manifests
-│           ├── agent.yaml       ← StatefulSet for traffic-agent pods
-│           └── orchestrator.yaml ← Deployment for orchestrator pod
+│       ├── grafana.yaml         ← Valori Helm per lo stack Grafana/Prometheus
+│       ├── loki-values.yaml     ← Valori Helm per Loki
+│       ├── dashboards/          ← Dashboard Grafana personalizzate (stress, salute, prompt, log)
+│       └── k8s/                 ← Manifest Kubernetes
+│           ├── agent.yaml       ← StatefulSet per i pod traffic-agent
+│           └── orchestrator.yaml ← Deployment per il pod orchestratore
 │
-└── backend_server/              ← Persistence layer (REST API + MCP)
-    ├── backend_server.py        ← FastAPI + FastMCP server (port 8000)
+└── backend_server/              ← Livello di persistenza (REST API + MCP)
+    ├── backend_server.py        ← Server FastAPI + FastMCP (porta 8000)
     └── data/
-        ├── agent_topologies/    ← Per-agent topology JSON files
-        └── traffic_state.db     ← SQLite: topologies + stress history
+        ├── agent_topologies/    ← File JSON di topologia per agente
+        └── traffic_state.db     ← SQLite: topologie + storico stress
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architettura
 
-<img width="807" height="814" alt="image" src="https://github.com/user-attachments/assets/94d26872-05b9-484b-b441-f80407b6badc" />
-
+<img width="807" height="814" alt="Architettura del sistema" src="https://github.com/user-attachments/assets/94d26872-05b9-484b-b441-f80407b6badc" />
 
 ---
 
-## 🔄 System Workflow
+## 🔄 Flusso di Sistema
 
 ### 1. Bootstrap (`agenticTrafficManager.py`)
-1. Parses the SUMO `.net.xml` of the chosen simulation
-2. Applies **K-Means clustering** (k = number of agents) to spatially partition intersections and road edges
-3. Generates a **Token-Slim topology** for each agent (compact `E_IN>E_OUT(DEST)` format optimized for LLM context)
-4. Uploads topologies to the backend server (SQLite)
-5. Starts Minikube, installs the monitoring stack via Helm
-6. Builds Docker images for `agent` and `orchestrator` inside Minikube
-7. Applies K8s manifests and scales the `traffic-agent` StatefulSet to k replicas
-8. Opens port-forwards: `orchestrator-service:8080` and `grafana:3000`
 
-### 2. Simulation (`simulationManager.py`)
-1. Starts the **FastMCP server** (port 8001) in a background thread
-2. Launches SUMO (headless or with GUI) and connects via TraCI
-3. Each simulation step: reads lane-level vehicle and queue data into shared memory
-4. Applies any **pending commands** (phase changes, duration changes) queued by agents
-5. Every `decision_interval` steps: fires a POST to the Orchestrator to trigger one agentic cycle
+1. Analizza il file SUMO `.net.xml` della simulazione scelta
+2. Applica il **clustering K-Means** (*k* = numero di agenti) per partizionare spazialmente le intersezioni e gli archi stradali
+3. Genera una **topologia Token-Slim** per ogni agente (formato compatto `E_IN>E_OUT(DEST)` ottimizzato per il contesto LLM)
+4. Carica le topologie sul backend server (SQLite)
+5. Avvia Minikube, installa lo stack di monitoring tramite Helm
+6. Costruisce le immagini Docker per `agent` e `orchestrator` all'interno di Minikube
+7. Applica i manifest K8s e scala il StatefulSet `traffic-agent` a *k* repliche
+8. Apre i port-forward: `orchestrator-service:8080` e `grafana:3000`
 
-### 3. Agentic Loop (per decision cycle)
+### 2. Simulazione (`simulationManager.py`)
+
+1. Avvia il **server FastMCP** (porta 8001) in un thread in background
+2. Lancia SUMO (headless o con GUI) e si connette tramite TraCI
+3. Ad ogni step di simulazione: legge i dati di veicoli e code per corsia nella memoria condivisa
+4. Applica eventuali **comandi in attesa** (cambio fase, cambio durata) accodati dagli agenti
+5. Ogni `decision_interval` step: invia una POST all'Orchestrator per avviare un ciclo agentico
+
+### 3. Loop Agentico (per ogni ciclo decisionale)
+
 ```
 SUMO → POST /trigger_agentic → Orchestrator
-  └─► Dispatches all agents in parallel
-        Each TrafficAgent:
-          1. Connects to MCP server (persistent SSE)
-          2. Sends initial message to LLM with system prompt + step ID + global directive
-          3. LLM reasons and calls tools (up to MAX_ITERATIONS=5):
+  └─► Dispatch di tutti gli agenti in parallelo
+        Ogni TrafficAgent:
+          1. Si connette al server MCP (SSE persistente)
+          2. Invia il messaggio iniziale all'LLM con system prompt + step ID + direttiva globale
+          3. L'LLM ragiona e chiama gli strumenti (fino a MAX_ITERATIONS=5):
              ├── compute_stress_index(tls_ids)  → stress 0.0–100.0
-             ├── compute_phase_duration(stress) → adaptive green duration
+             ├── compute_phase_duration(stress) → durata verde adattiva
              ├── set_traffic_light_duration(tl_id, duration)
              └── set_traffic_light(tl_id, phase_index)
-          4. Returns {stress_index, prompt_text, actions_taken}
-  └─► Orchestrator collects all agent outputs
-        Orchestrator LLM:
-          1. Calls save_agent_stress for each agent → SQLite
-          2. Calls get_recent_stress(limit=N) → stress history
-          3. Analyzes current stress + historical trend
-          4. Returns one directive per agent:
+          4. Restituisce {stress_index, prompt_text, actions_taken}
+  └─► L'Orchestrator raccoglie gli output di tutti gli agenti
+        LLM Orchestrator:
+          1. Chiama save_agent_stress per ogni agente → SQLite
+          2. Chiama get_recent_stress(limit=N) → storico stress
+          3. Analizza lo stress corrente + il trend storico
+          4. Restituisce una direttiva per ogni agente:
              prioritize_flow | hold_or_balance | reduce_aggressiveness
 ```
 
 ---
 
-## 📐 Stress Index Formula
+## 📐 Formula dello Stress Index
 
-The stress index (0–100) is computed per-zone by the MCP tool `compute_stress_index`:
+Lo stress index (0–100) viene calcolato per zona dallo strumento MCP `compute_stress_index`:
 
 ```
-saturation   = min(total_queue / lane_capacity, 1.0)
-               where lane_capacity = Σ(lane_length / 7.5)
+saturazione    = min(coda_totale / capacità_corsia, 1.0)
+                 dove capacità_corsia = Σ(lunghezza_corsia / 7.5)
 
-halting_ratio = halting_vehicles / total_vehicles
+halting_ratio  = veicoli_fermi / veicoli_totali
 
-inter_stress = (saturation × 60) + (halting_ratio × 40)
+inter_stress   = (saturazione × 60) + (halting_ratio × 40)
 
-final_stress = mean(inter_stress) across managed intersections
+stress_finale  = media(inter_stress) sulle intersezioni gestite
 ```
 
-| Range | Level | Agent behavior |
-|-------|-------|----------------|
-| < 10 | 🟢 Low | No action, maintain current configuration |
-| 10–22 | 🟡 Moderate | Adjust phase duration adaptively |
-| ≥ 22 | 🔴 High | May change traffic light phase policy |
+| Range | Livello | Comportamento agente |
+|-------|---------|----------------------|
+| < 10 | 🟢 Basso | Nessuna azione, mantiene la configurazione attuale |
+| 10–22 | 🟡 Moderato | Regola la durata della fase in modo adattivo |
+| ≥ 22 | 🔴 Alto | Può modificare la politica della fase semaforica |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Come Iniziare
 
-### Prerequisites
+### Prerequisiti
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Python | ≥ 3.10 | Running SUMO engine and backend |
-| SUMO | ≥ 1.18 | Traffic simulation |
-| Docker | ≥ 24 | Container runtime for Minikube |
-| Minikube | ≥ 1.32 | Local Kubernetes cluster |
-| kubectl | ≥ 1.28 | K8s management |
-| Helm | ≥ 3.12 | Installing monitoring stack |
+| Strumento | Versione | Scopo |
+|-----------|----------|-------|
+| Python | ≥ 3.10 | Eseguire il motore SUMO e il backend |
+| SUMO | ≥ 1.18 | Simulazione del traffico |
+| Docker | ≥ 24 | Runtime container per Minikube |
+| Minikube | ≥ 1.32 | Cluster Kubernetes locale |
+| kubectl | ≥ 1.28 | Gestione K8s |
+| Helm | ≥ 3.12 | Installazione dello stack di monitoring |
 
-### Installation
+### Installazione
 
 ```bash
-# 1. Clone the repository
+# 1. Clona il repository
 git clone https://github.com/melomatte/TrafficAgenticAi.git
 cd TrafficAgenticAi
 
-# 2. Create a virtual environment and install dependencies
+# 2. Crea un ambiente virtuale e installa le dipendenze
 python3 -m venv .venv
 source .venv/bin/activate    # macOS/Linux
 # .venv\Scripts\activate     # Windows
 
 pip install -r requirements.txt
 
-# 3. Set SUMO_HOME
-export SUMO_HOME=/usr/share/sumo    # adjust to your SUMO installation path
+# 3. Imposta SUMO_HOME
+export SUMO_HOME=/usr/share/sumo    # adatta al percorso della tua installazione SUMO
 ```
 
-### Configure LLM credentials
+### Configurare le credenziali LLM
 
-Create the file `trafficAgentic/.env` with your LLM credentials:
+Crea il file `trafficAgentic/.env` con le tue credenziali LLM:
 
 ```env
-# Using LiteLLM proxy (recommended — supports many models)
-LLM_API_KEY=<your_api_key>
+# Usando il proxy LiteLLM (consigliato — supporta molti modelli)
+LLM_API_KEY=<tua_api_key>
 LLM_SDK=litellm
-MODEL_NAME=<model_name>        # e.g. gemini/gemini-2.0-flash
+MODEL_NAME=<nome_modello>        # es. gemini/gemini-2.0-flash
 PROVIDER=cloud
 
-# Using OpenAI directly
-LLM_API_KEY=<your_openai_key>
+# Usando OpenAI direttamente
+LLM_API_KEY=<tua_openai_key>
 LLM_SDK=openai
 MODEL_NAME=gpt-4o
 PROVIDER=cloud
 
-# Using OpenRouter
-LLM_API_KEY=<your_openrouter_key>
+# Usando OpenRouter
+LLM_API_KEY=<tua_openrouter_key>
 LLM_SDK=openrouter
-MODEL_NAME=<model_name>
+MODEL_NAME=<nome_modello>
 PROVIDER=cloud
 
-# Using a local model (LM Studio)
+# Usando un modello locale (LM Studio)
 LLM_SDK=openai
-MODEL_NAME=<local_model_name>
+MODEL_NAME=<nome_modello_locale>
 PROVIDER=local
 ```
 
 ---
 
-## ▶️ Running the System
+## ▶️ Eseguire il Sistema
 
-The system has **two independent processes** that must be started separately.
+Il sistema prevede **due processi indipendenti** da avviare separatamente.
 
-### Step 1 — Start the Backend Server
+### Passo 1 — Avvia il Backend Server
 
 ```bash
-# From the project root
+# Dalla root del progetto
 python3 backend_server/backend_server.py
 ```
 
-The backend exposes:
-- REST API on `http://localhost:8000` (topology upload)
-- MCP server on `http://localhost:8000` (stress persistence tools for the orchestrator)
+Il backend espone:
+- REST API su `http://localhost:8000` (upload topologia)
+- Server MCP su `http://localhost:8000` (strumenti di persistenza stress per l'orchestratore)
 
-### Step 2 — Start the Agentic Infrastructure
+### Passo 2 — Avvia l'Infrastruttura Agentica
 
 ```bash
-# From the project root — launches Minikube, K8s, monitoring, agents
+# Dalla root del progetto — avvia Minikube, K8s, monitoring e agenti
 python3 trafficAgentic/agenticTrafficManager.py \
     --simulation_name 2cross \
     --k 2 \
@@ -244,122 +246,124 @@ python3 trafficAgentic/agenticTrafficManager.py \
     --cpus 4
 ```
 
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--simulation_name` | `2cross` | Name of the network folder under `sumo_engine/urbanNetworks/` |
-| `--k` | `2` | Number of agents / clusters (must match available intersections) |
-| `--memory` | `8192` | RAM (MB) allocated to Minikube |
-| `--cpus` | `4` | CPU cores allocated to Minikube |
+| Argomento | Default | Descrizione |
+|-----------|---------|-------------|
+| `--simulation_name` | `2cross` | Nome della cartella di rete in `sumo_engine/urbanNetworks/` |
+| `--k` | `2` | Numero di agenti / cluster (deve corrispondere alle intersezioni disponibili) |
+| `--memory` | `8192` | RAM (MB) allocata a Minikube |
+| `--cpus` | `4` | Core CPU allocati a Minikube |
 
-### Step 3 — Start the SUMO Simulation
+### Passo 3 — Avvia la Simulazione SUMO
 
 ```bash
-# From the project root
+# Dalla root del progetto
 python3 sumo_engine/simulationManager.py \
     --simulation_name 2cross \
     --decision_interval 60 \
     --gui false
 ```
 
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--simulation_name` | `2cross` | Network to simulate |
-| `--decision_interval` | `60` | SUMO steps between agentic cycles |
-| `--gui` | `false` | Set to `true` to enable SUMO graphical interface |
+| Argomento | Default | Descrizione |
+|-----------|---------|-------------|
+| `--simulation_name` | `2cross` | Rete da simulare |
+| `--decision_interval` | `60` | Step SUMO tra un ciclo agentico e l'altro |
+| `--gui` | `false` | Imposta `true` per abilitare l'interfaccia grafica di SUMO |
 
-### Stopping
+### Arresto
 
-Press `Ctrl+C` in the `agenticTrafficManager` terminal. The cleanup handler will automatically:
-- Close all port-forward tunnels
-- Delete Kubernetes resources
-- Stop Minikube
-
----
-
-## 📊 Observability
-
-Once running, Grafana is available at **http://localhost:3000** (credentials: `admin` / `admin`).
-
-Four custom dashboards are pre-provisioned:
-
-| Dashboard | Content |
-|-----------|---------|
-| **Health Dashboard** | Agent pod status, uptime, error rates |
-| **Stress Dashboard** | Per-agent and global stress index over time |
-| **Prompt Dashboard** | LLM prompt and response monitoring |
-| **Logs Dashboard** | Full structured log stream (via Loki) |
-
-All LLM interactions are logged as structured JSON to stdout and ingested by Promtail → Loki.
+Premi `Ctrl+C` nel terminale di `agenticTrafficManager`. Il gestore di pulizia eseguirà automaticamente:
+- Chiusura di tutti i tunnel port-forward
+- Eliminazione delle risorse Kubernetes
+- Arresto di Minikube
 
 ---
 
-## 🌐 Available Urban Networks
+## 📊 Osservabilità
 
-| Network | Type | Description |
-|---------|------|-------------|
-| `cross` | Synthetic | Single 4-way intersection |
-| `2cross` | Synthetic | Two connected intersections (default) |
-| `Ncross` | Synthetic | 80-node grid (`grid80.net.xml`) |
-| `Prova_VialeAldini` | Real (OSM) | Bologna — Viale Aldini corridor |
-| `Simplified_bolo` | Real (OSM) | Simplified Bologna road network |
-| `Simplified_bolo_center` | Real (OSM) | Bologna city center |
+Una volta avviato, Grafana è disponibile su **http://localhost:3000** (credenziali: `admin` / `admin`).
 
----
+Quattro dashboard personalizzate sono pre-configurate:
 
-## 🧩 MCP Tools Reference
+| Dashboard | Contenuto |
+|-----------|-----------|
+| **Health Dashboard** | Stato dei pod agente, uptime, tassi di errore |
+| **Stress Dashboard** | Stress index per agente e globale nel tempo |
+| **Prompt Dashboard** | Monitoraggio dei prompt e delle risposte LLM |
+| **Logs Dashboard** | Stream di log strutturati completo (via Loki) |
 
-### SUMO Engine MCP Server (port 8001)
-
-| Tool | Input | Output | Description |
-|------|-------|--------|-------------|
-| `compute_stress_index` | `tls_ids: list[str]` | `float` | Computes zone stress 0–100 from shared memory |
-| `compute_phase_duration` | `stress_index: float` | `float` | Returns adaptive green duration (15–60 s) |
-| `set_traffic_light_duration` | `tl_id, duration` | status | Queues a phase-duration change in SUMO |
-| `set_traffic_light` | `tl_id, phase_index` | status | Queues a phase change in SUMO (with safe yellow transition) |
-
-### Backend MCP Server (port 8000)
-
-| Tool | Input | Output | Description |
-|------|-------|--------|-------------|
-| `save_agent_stress` | `agent_id, stress_index, prompt_text` | status | Persists agent stress snapshot to SQLite |
-| `get_recent_stress` | `limit: int` | list | Returns the N most recent stress records |
+Tutte le interazioni LLM vengono registrate come JSON strutturato su stdout e acquisite da Promtail → Loki.
 
 ---
 
-## 🔧 LLM Provider Support
+## 🌐 Reti Urbane Disponibili
 
-The `AgentConnector` provides a unified interface to multiple providers with zero changes to agent code:
+| Rete | Tipo | Descrizione |
+|------|------|-------------|
+| `cross` | Sintetica | Singola intersezione a 4 vie |
+| `2cross` | Sintetica | Due intersezioni collegate (default) |
+| `Ncross` | Sintetica | Griglia con 80 nodi (`grid80.net.xml`) |
+| `Prova_VialeAldini` | Reale (OSM) | Bologna — corridoio Viale Aldini |
+| `Simplified_bolo` | Reale (OSM) | Rete stradale Bologna semplificata |
+| `Simplified_bolo_center` | Reale (OSM) | Centro città di Bologna |
 
-| Provider | SDK | Configuration |
-|----------|-----|---------------|
+---
+
+## 🧩 Riferimento Strumenti MCP
+
+### Server MCP Motore SUMO (porta 8001)
+
+| Strumento | Input | Output | Descrizione |
+|-----------|-------|--------|-------------|
+| `compute_stress_index` | `tls_ids: list[str]` | `float` | Calcola lo stress di zona (0–100) dalla memoria condivisa |
+| `compute_phase_duration` | `stress_index: float` | `float` | Restituisce la durata verde adattiva (15–60 s) |
+| `set_traffic_light_duration` | `tl_id, duration` | stato | Accoda un cambio di durata fase in SUMO |
+| `set_traffic_light` | `tl_id, phase_index` | stato | Accoda un cambio di fase in SUMO (con transizione giallo sicura) |
+
+### Server MCP Backend (porta 8000)
+
+| Strumento | Input | Output | Descrizione |
+|-----------|-------|--------|-------------|
+| `save_agent_stress` | `agent_id, stress_index, prompt_text` | stato | Persiste uno snapshot di stress agente su SQLite |
+| `get_recent_stress` | `limit: int` | lista | Restituisce gli N record di stress più recenti |
+
+---
+
+## 🔧 Supporto Provider LLM
+
+L'`AgentConnector` fornisce un'interfaccia unificata verso molteplici provider senza modifiche al codice degli agenti:
+
+| Provider | SDK | Configurazione |
+|----------|-----|----------------|
 | OpenAI | `openai` | `LLM_SDK=openai` |
-| LiteLLM proxy | `litellm` | `LLM_SDK=litellm` |
+| Proxy LiteLLM | `litellm` | `LLM_SDK=litellm` |
 | OpenRouter | `openrouter` | `LLM_SDK=openrouter` |
-| LM Studio (local) | OpenAI-compat | `PROVIDER=local` |
+| LM Studio (locale) | Compatibile OpenAI | `PROVIDER=local` |
 
 ---
 
-## 🗺️ Topology Format (Token-Slim)
+## 🗺️ Formato Topologia (Token-Slim)
 
-To minimize LLM context usage, road network topologies are encoded in a compact **Token-Slim** format:
+Per minimizzare l'utilizzo del contesto LLM, le topologie di rete stradale sono codificate in un formato compatto **Token-Slim**:
 
 ```
-<junction_id>: <edge_in>><edge_out>(<destination>), ...
+<junction_id>: <edge_in>><edge_out>(<destinazione>), ...
 ```
 
-Example:
+Esempio:
+
 ```
 J1: E_north>E_south(J2), E_west>E_east(EXT), E_east>E_west(EXT)
 J2: E_south>E_north(J1), E_east>E_exit(EXT)
 ```
 
-This format is generated automatically from the SUMO `.net.xml` file during the bootstrap phase using K-Means clustering.
+Questo formato viene generato automaticamente dal file SUMO `.net.xml` durante la fase di bootstrap tramite clustering K-Means.
 
 ---
 
-## 📋 Requirements
+## 📋 Requisiti
 
 ### Python (root)
+
 ```
 fastapi
 fastmcp
@@ -374,44 +378,47 @@ traci
 helm
 ```
 
-### Agent / Orchestrator pods
-See `trafficAgentic/src/traffic_agent/requirements.txt` and `trafficAgentic/src/orchestrator/requirements.txt`.
+### Pod Agente / Orchestratore
+
+Vedi `trafficAgentic/src/traffic_agent/requirements.txt` e `trafficAgentic/src/orchestrator/requirements.txt`.
 
 ---
 
-## 📁 Key Files Quick Reference
+## 📁 Riferimento Rapido File Chiave
 
-| File | Role |
-|------|------|
-| `trafficAgentic/agenticTrafficManager.py` | Main orchestration script (run first) |
-| `sumo_engine/simulationManager.py` | SUMO simulation runner |
-| `backend_server/backend_server.py` | Persistence REST + MCP server |
-| `trafficAgentic/src/traffic_agent/agent_core.py` | TrafficAgent agentic loop |
-| `trafficAgentic/src/orchestrator/orchestrator_core.py` | Orchestrator agentic loop |
-| `trafficAgentic/src/traffic_agent/agent_policies.py` | Agent system prompt |
-| `trafficAgentic/src/orchestrator/orchestrator_policies.py` | Orchestrator system prompt |
-| `trafficAgentic/src/traffic_agent/llm_connector.py` | Unified LLM connector |
-| `trafficAgentic/clusteringTopology/topology_library.py` | K-Means clustering + topology generation |
-| `sumo_engine/mcp_server.py` | FastMCP tools exposed to agents |
-| `trafficAgentic/config/k8s/` | Kubernetes manifests |
-| `trafficAgentic/config/dashboards/` | Grafana dashboard JSON configs |
-| `trafficAgentic/.env` | LLM credentials (create this — not committed) |
-
----
-
-## ⚠️ Known Limitations & TODOs
-
-- Phase-to-policy mapping is currently hardcoded (`PRIORITY_MAIN → phase_index: 0`, etc.)
-- MCP error handling can be made more robust across all tool calls
-- TraCI stability with concurrent commands needs further testing on large networks
-- GUI mode (sumo-gui) requires XQuartz on macOS; headless is recommended for automated runs
-- Stress memory tool for the orchestrator is not yet implemented on the MCP side
+| File | Ruolo |
+|------|-------|
+| `trafficAgentic/agenticTrafficManager.py` | Script di orchestrazione principale (avviare per primo) |
+| `sumo_engine/simulationManager.py` | Runner simulazione SUMO |
+| `backend_server/backend_server.py` | Server REST + MCP di persistenza |
+| `trafficAgentic/src/traffic_agent/agent_core.py` | Loop agentico TrafficAgent |
+| `trafficAgentic/src/orchestrator/orchestrator_core.py` | Loop agentico Orchestratore |
+| `trafficAgentic/src/traffic_agent/agent_policies.py` | System prompt agente |
+| `trafficAgentic/src/orchestrator/orchestrator_policies.py` | System prompt orchestratore |
+| `trafficAgentic/src/traffic_agent/llm_connector.py` | Connettore LLM unificato |
+| `trafficAgentic/clusteringTopology/topology_library.py` | Clustering K-Means + generazione topologia |
+| `sumo_engine/mcp_server.py` | Strumenti FastMCP esposti agli agenti |
+| `trafficAgentic/config/k8s/` | Manifest Kubernetes |
+| `trafficAgentic/config/dashboards/` | Configurazioni JSON dashboard Grafana |
+| `trafficAgentic/.env` | Credenziali LLM (da creare — non committato) |
 
 ---
 
-## 📄 License
+## ⚠️ Limitazioni Conosciute e TODO
 
-This project is open source. See [LICENSE](LICENSE) for details.
+- Il mapping fase-politica è attualmente hardcoded (`PRIORITY_MAIN → phase_index: 0`, ecc.)
+- La gestione degli errori MCP può essere resa più robusta su tutte le chiamate agli strumenti
+- La stabilità di TraCI con comandi concorrenti richiede ulteriori test su reti di grandi dimensioni
+- La modalità GUI (`sumo-gui`) richiede XQuartz su macOS; la modalità headless è consigliata per esecuzioni automatizzate
+- Lo strumento di memoria stress per l'orchestratore non è ancora implementato lato MCP
+
+---
+
+## 📄 Licenza
+
+Questo progetto è open source. Vedi [LICENSE](LICENSE) per i dettagli.
+
+---
 
 ## Autori
 
@@ -419,5 +426,3 @@ This project is open source. See [LICENSE](LICENSE) for details.
 |:--:|:--:|:--:|
 | <a href="https://github.com/BlackRaffo70"><img src="https://github.com/BlackRaffo70.png" width="110" alt="avatar Raffaele Neri"></a> | <a href="https://github.com/melomatte"><img src="https://github.com/melomatte.png" width="110" alt="avatar Matteo Melotti"></a> | <a href="https://github.com/MarcoCrisafulli5"><img src="https://github.com/MarcoCrisafulli5.png" width="110" alt="avatar Marco Crisafulli"></a> |
 | **Raffaele Neri**<br/>[@BlackRaffo70](https://github.com/BlackRaffo70) | **Matteo Melotti**<br/>[@melottimatteo](https://github.com/melomatte) | **Marco Crisafulli**<br/>[@MarcoCrisafulli5](https://github.com/MarcoCrisafulli5) |
-
----
